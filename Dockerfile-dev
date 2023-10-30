@@ -1,0 +1,16 @@
+FROM elixir:latest
+
+RUN apt-get update && \
+  apt-get install -y postgresql-client && \
+  apt-get autoclean
+
+RUN mkdir /app
+ARG VERSION=1.0.0
+COPY . /app
+WORKDIR /app
+
+RUN mix local.hex --force
+RUN mix deps.get
+RUN mix compile
+
+CMD ["/app/entrypoint.sh"]

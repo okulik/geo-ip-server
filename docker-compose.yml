@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+   api:
+      build:
+         context: .
+         dockerfile: Dockerfile-dev
+      environment:
+         PGUSER: postgres
+         PGPASSWORD: postgres
+         PGHOST: db
+         PGPORT: 5432
+         PGDATABASE: geo_ip_server_dev
+         PORT: 4000
+      ports:
+         - '4000:4000'
+      depends_on:
+         - db
+   db:
+      build:
+         dockerfile: Dockerfile-db-dev
+      environment:
+         POSTGRES_USER: postgres
+         POSTGRES_PASSWORD: postgres
+         PGDATA: /var/lib/postgresql/data/pgdata
+      restart: always
+      volumes:
+         - pgdata:/var/lib/postgresql/data
+
+volumes:
+   pgdata:

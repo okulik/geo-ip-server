@@ -1,0 +1,35 @@
+# fly.toml app configuration file generated for geo-ip-server on 2023-10-28T19:07:32+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "geo-ip-server"
+primary_region = "ams"
+kill_signal = "SIGTERM"
+swap_size_mb = 512
+
+[build]
+
+[deploy]
+release_command = "sh /app/release.sh"
+
+[env]
+PHX_HOST = "geo-ip-server.fly.dev"
+PORT = "4000"
+
+[[services]]
+  processes = ["app"]
+  internal_port = 4000
+  protocol = "tcp"
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+[services.concurrency]
+  type = "connections"
+  hard_limit = 25
+  soft_limit = 20
+
+[processes]
+  app = "/app/bin/server"
+  cron = "supercronic /app/crontab"
