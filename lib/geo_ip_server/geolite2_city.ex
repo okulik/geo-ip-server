@@ -269,13 +269,25 @@ defmodule GeoIpServer.Geolite2City do
     end
   end
 
+  @doc """
+    Imports the provided CSV file into the database. The CSV file is expected
+    to be in the temporary directory. The CSV file is imported in batches of
+    @csv_batch_size rows. Each batch is imported in a transaction.
+    Returns a Geolite2Import struct.
+
+    ## Examples
+
+        iex> import_csv_file!(temp_dir, zip_folder, csv)
+        %Geolite2Import{
+          import_file: "GeoLite2-City-Locations-en.csv",
+          import_file_sha256: "abcd1234",
+          success_count: 10,
+          error_count: 0,
+          running_time: 12
+        }
+  """
   def import_csv_file!(temp_dir, zip_folder, csv, sha: import_sha256, ts: ts) do
     Path.join([temp_dir, zip_folder, csv])
-    |> import_from_csv(csv, sha: import_sha256, ts: ts)
-  end
-
-  def import_from_csv(file_path, csv, sha: import_sha256, ts: ts) do
-    file_path
     |> File.stream!()
     |> import_from_stream(csv, sha: import_sha256, ts: ts)
   end

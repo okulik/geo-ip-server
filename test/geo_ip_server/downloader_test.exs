@@ -18,7 +18,7 @@ defmodule GeoIpServer.DownloaderTest do
       "507080d84b95b5c383bc9aa950aa9f4f09c1fd01f227a33959daf9d93fa6ff31  GeoLite2-City-CSV_20231027.zip"
 
     expect(:hackney, :head, fn _ -> {:ok, 200, headers_head} end)
-    expect(:hackney, :get, fn _ -> {:ok, 200, headers_get, nil} end)
+    expect(:hackney, :get, fn _, _, _, _ -> {:ok, 200, headers_get, nil} end)
     expect(:hackney, :stream_body, 1, seq([{:ok, body}, :done]))
     expect(:hackney, :close, fn _ -> :ok end)
 

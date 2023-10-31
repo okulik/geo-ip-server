@@ -30,7 +30,7 @@ defmodule GeoIpServer.Release do
   @doc """
   Imports the latest GeoLite2 City data into a database.
   """
-  def import_geolite2db do
+  def import_geolite2 do
     load_app()
     # Start the application except the web server (as PHX_SERVER is only
     # set when the web server is started by running bin/server in production).

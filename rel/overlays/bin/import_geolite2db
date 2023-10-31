@@ -1,3 +1,0 @@
-#!/bin/sh
-cd -P -- "$(dirname -- "$0")"
-exec ./geo_ip_server eval "GeoIpServer.Release.import_geolite2db"

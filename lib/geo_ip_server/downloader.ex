@@ -3,6 +3,8 @@ defmodule GeoIpServer.Downloader do
   The module for downloading files from URLs.
   """
 
+  @http_receive_timeout 150_000
+
   require Logger
 
   @doc """
@@ -59,7 +61,8 @@ defmodule GeoIpServer.Downloader do
   end
 
   defp begin_download(url) do
-    {:ok, _status, headers, client} = :hackney.get(url)
+    {:ok, _status, headers, client} =
+      :hackney.get(url, [], <<>>, recv_timeout: @http_receive_timeout)
 
     total_size =
       headers

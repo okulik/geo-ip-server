@@ -1,1 +1,1 @@
-51 23 * * 1,4 /app/bin/import_geolite2db
+51 23 * * 1,4 /app/bin/import_geolite2

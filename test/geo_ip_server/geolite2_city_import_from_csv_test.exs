@@ -8,9 +8,10 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
   describe "geolite city2 tests" do
     test "import_from_csv/1 with a missing file" do
       assert_raise File.Error, ~r/no such file or directory/, fn ->
-        "no-such-file.csv"
-        |> Geolite2City.import_from_csv(
-          "GeoLite2-City-Blocks-IPv4.csv",
+        Geolite2City.import_csv_file!(
+          "/tmp",
+          "rand123",
+          "no-such-file.csv",
           sha: "some-sha",
           ts: "20231024"
         )

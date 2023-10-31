@@ -63,7 +63,7 @@ $ GEOLITE2_CITY_LICENSE_KEY=<secret_key> /app/bin/import_csv
 
 A cronjob is run twice a week (in production):
 ```
-51 23 * * 1,4 /app/bin/import_geolite2db
+51 23 * * 1,4 /app/bin/import_geolite2
 ```
 
 ## Querying the Gelocation Data
