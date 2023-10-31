@@ -1,6 +1,12 @@
 # Geo IP Server
 
-This service provides geolocation data for given IP addresses. It exposes an endpoint at `/geoips/{:ip}`, which returns JSON-formatted data.
+The Geo IP Server service provides geolocation data for given IP addresses. It exposes an endpoint at `/geoips/{:ip}`, which returns data in JSON format.
+
+This repository serves as a template for anyone interested in running a similar service in their own hosting environment. While it's configured for fly.io hosting out of the box, you can easly adapt it for other platforms. To get started, make sure to obtain your own MaxMind license key and create a fly.io account.
+
+The see it in action, visit https://geo-ip-server-demo.fly.dev. It should display your country's flag, demonstrating how the service works.
+
+## Data Management and Caching
 
 IP addresses are automatically loaded twice a week from the [MaxMind's GeoLite2](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) City database into a PostgreSQL instance. MaxMind and other geoip data providers such as [TransUnion/Neustar](https://www.transunion.com/solution/truvalidate/digital-insights/ip-intelligence), [IP2Location](https://www.ip2location.com), and others ship their databases containing IP address ranges (in CIDR format, both for IPv4 and IPv6). To allow efficient querying of IP ranges with individual addresses, the [IP4R extension](https://github.com/RhodiumToad/ip4r) was added to PostgreSQL.
 
