@@ -29,7 +29,7 @@ defmodule GeoIpServer.GeoDataTest.IPv6 do
     end
 
     test "get_block_ipv6/1 returns error for an invalid range" do
-      assert Geolite2City.get_block_ipv6("invalid.address") == {:error, :invalid_ip6r}
+      assert Geolite2City.get_block_ipv6("invalid.address") == {:error, :invalid_ip}
     end
 
     test "create_block_ipv6!/1 with valid attributes creates BlockIpv6 struct" do
@@ -50,7 +50,7 @@ defmodule GeoIpServer.GeoDataTest.IPv6 do
 
       loc = Geolite2City.create_block_ipv6!(attrs)
       assert %BlockIpv6{} = loc
-      {:ok, network} = EctoIPRange.IP6R.cast("2001:218:c000::/50")
+      {:ok, network} = EctoNetwork.CIDR.cast("2001:218:c000::/50")
       assert loc.network == network
       assert loc.geoname_id == 123
       assert loc.registered_country_geoname_id == 123

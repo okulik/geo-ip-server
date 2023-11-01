@@ -18,7 +18,7 @@ jobs:
   test:
     services:
       db:
-        image: jonasprogrammer/postgres-ip4r:latest
+        image: postgres:latest
         ports: ["5432:5432"]
         env:
           POSTGRES_PASSWORD: postgres

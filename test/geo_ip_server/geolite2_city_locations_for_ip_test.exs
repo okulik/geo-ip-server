@@ -19,7 +19,8 @@ defmodule GeoIpServer.GeoDataTest.LocationsForIp do
         network: "2001:218:c000::/50"
       })
 
-      {:ok, [rec]} = Geolite2City.get_locations_for_ip("10.0.0.0")
+      ret = Geolite2City.get_locations_for_ip("10.0.0.0")
+      assert {:ok, [rec]} = ret
       assert rec["geoname_id"] == loc.geoname_id
       assert rec["locale_code"] == loc.locale_code
       assert rec["continent_code"] == loc.continent_code
@@ -35,7 +36,8 @@ defmodule GeoIpServer.GeoDataTest.LocationsForIp do
       assert rec["time_zone"] == loc.time_zone
       assert rec["is_in_european_union"] == loc.is_in_european_union
 
-      {:ok, [rec]} = Geolite2City.get_locations_for_ip("2001:218:c000::")
+      ret = Geolite2City.get_locations_for_ip("2001:218:c000::")
+      assert {:ok, [rec]} = ret
       assert rec["geoname_id"] == loc.geoname_id
       assert rec["locale_code"] == loc.locale_code
       assert rec["continent_code"] == loc.continent_code

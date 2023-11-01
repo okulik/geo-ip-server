@@ -36,8 +36,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
       )
 
       {:ok, block_ipv4} = Geolite2City.get_block_ipv4("1.0.0.0/24")
-      {:ok, ip4r} = EctoIPRange.IP4R.cast("1.0.0.0/24")
-      assert block_ipv4.network == ip4r
+      {:ok, range} = EctoNetwork.CIDR.cast("1.0.0.0/24")
+      assert block_ipv4.network == range
       assert block_ipv4.geoname_id == 2_077_456
       assert block_ipv4.registered_country_geoname_id == 2_077_456
       assert block_ipv4.represented_country_geoname_id == nil
@@ -118,8 +118,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
       )
 
       {:ok, block_ipv6} = Geolite2City.get_block_ipv6("2a7:1c44:39f3:aa::/64")
-      {:ok, ip6r} = EctoIPRange.IP6R.cast("2a7:1c44:39f3:aa::/64")
-      assert block_ipv6.network == ip6r
+      {:ok, range} = EctoNetwork.CIDR.cast("2a7:1c44:39f3:aa::/64")
+      assert block_ipv6.network == range
       assert block_ipv6.geoname_id == 2_657_896
       assert block_ipv6.registered_country_geoname_id == nil
       assert block_ipv6.represented_country_geoname_id == nil

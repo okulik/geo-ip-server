@@ -3,15 +3,13 @@ defmodule GeoIpServer.Geolite2City.BlockIpv4 do
 
   import Ecto.Changeset
 
-  alias EctoIPRange.IP4R
-
   require Logger
 
   @moduledoc """
   Contains the schema for the locations table.
   """
 
-  @primary_key {:network, IP4R, []}
+  @primary_key {:network, EctoNetwork.CIDR, []}
   schema "geolite2_city_blocks_ipv4" do
     field(:geoname_id, :integer)
     field(:registered_country_geoname_id, :integer)

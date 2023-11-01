@@ -6,8 +6,7 @@ config :geo_ip_server, GeoIpServer.Repo,
   hostname: "localhost",
   database: "geo_ip_server_test",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: 10,
-  types: GeoIpServer.PostgrexTypes
+  pool_size: 10
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

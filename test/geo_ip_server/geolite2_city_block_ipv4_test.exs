@@ -29,7 +29,7 @@ defmodule GeoIpServer.GeoDataTest.IPv4 do
     end
 
     test "get_block_ipv4/1 returns error for an invalid range" do
-      assert Geolite2City.get_block_ipv4("invalid.address") == {:error, :invalid_ip4r}
+      assert Geolite2City.get_block_ipv4("invalid.address") == {:error, :invalid_ip}
     end
 
     test "create_block_ipv4!/1 with valid attributes creates BlockIpv4 struct" do
@@ -50,7 +50,7 @@ defmodule GeoIpServer.GeoDataTest.IPv4 do
 
       loc = Geolite2City.create_block_ipv4!(attrs)
       assert %BlockIpv4{} = loc
-      {:ok, network} = EctoIPRange.IP4R.cast("10.0.0.0/8")
+      {:ok, network} = EctoNetwork.CIDR.cast("10.0.0.0/8")
       assert loc.network == network
       assert loc.geoname_id == 123
       assert loc.registered_country_geoname_id == 123

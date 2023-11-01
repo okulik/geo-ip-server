@@ -9,8 +9,7 @@ config :geo_ip_server, GeoIpServer.Repo,
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10,
-  log: :debug,
-  types: GeoIpServer.PostgrexTypes
+  log: :debug
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

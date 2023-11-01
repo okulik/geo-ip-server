@@ -9,8 +9,6 @@ done
 
 # Create, migrate, and seed database if it doesn't exist.
 if [[ -z `psql -Atqc "\\list $PGDATABASE"` ]]; then
-  # ecto.setup is an alias for ["ecto.create", "ecto.migrate",
-  #   "import_csv rel/overlays/seeds/cloud_data_dump.csv"]
   mix ecto.setup
 else
   mix ecto.migrate

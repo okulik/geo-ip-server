@@ -41,7 +41,7 @@ defmodule GeoIpServer.MixProject do
   defp deps do
     [
       {:hackney, "~>1.20"},
-      {:ecto_ip_range, "~> 0.2.0"},
+      {:ecto_network, "~> 1.3.0"},
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.4"},
       {:nebulex, "~> 2.5"},

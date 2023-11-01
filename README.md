@@ -8,7 +8,7 @@ The see it in action, visit https://geo-ip-server-demo.fly.dev. It should displa
 
 ## Data Management and Caching
 
-IP addresses are automatically loaded twice a week from the [MaxMind's GeoLite2](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) City database into a PostgreSQL instance. MaxMind and other geoip data providers such as [TransUnion/Neustar](https://www.transunion.com/solution/truvalidate/digital-insights/ip-intelligence), [IP2Location](https://www.ip2location.com), and others ship their databases containing IP address ranges (in CIDR format, both for IPv4 and IPv6). To allow efficient querying of IP ranges with individual addresses, the [IP4R extension](https://github.com/RhodiumToad/ip4r) was added to PostgreSQL.
+IP addresses are automatically loaded twice a week from the [MaxMind's GeoLite2](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data) City database into a PostgreSQL instance. MaxMind and other geoip data providers such as [TransUnion/Neustar](https://www.transunion.com/solution/truvalidate/digital-insights/ip-intelligence), [IP2Location](https://www.ip2location.com), and others ship their databases containing IP address ranges (in CIDR format, both for IPv4 and IPv6). To allow efficient querying of IP ranges with individual addresses, `cidr` PostgreSQL data type and `gist` index were used.
 
 Fetching geolocation data from the database is internally cached by the service using [nebulex](https://github.com/cabol/nebulex). The cache is purged on each successful import of fresh data from CSV files.
 
@@ -25,7 +25,7 @@ $ mix phx.server
 
 If you encounter `[error] Postgrex.Protocol (#PID<0.277.0>) failed to connect:` errors, ensure that you run the PostgreSQL server beforehand. You can run a Dockerized version with this command:
 ```bash
-$ docker run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust nipap/postgres-ip4r
+$ docker run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:latest
 ```
 
 Once you have the PostgreSQL server running, you might still encounter errors:
@@ -57,14 +57,14 @@ HTTP/1.1 200 OK
 
 To populate the database with geoip data, the service can import the IP address data from MaxMind's Geolite2 City database in CSV format. To run the import manually, use the following command:
 ```bash
-$ GEOLITE2_CITY_LICENSE_KEY=<secret_key> mix import_csv
+$ GEOLITE2_CITY_LICENSE_KEY=<secret_key> mix import_geolite2
 ```
 
 Make sure to replace `<secret_key>` with a valid MaxMind's [license key](https://support.maxmind.com/hc/en-us/articles/4407111582235-Generate-a-License-Key).
 
 In the production environment, use this command:
 ```bash
-$ GEOLITE2_CITY_LICENSE_KEY=<secret_key> /app/bin/import_csv
+$ GEOLITE2_CITY_LICENSE_KEY=<secret_key> /app/bin/import_geolite2
 ```
 
 A cronjob is run twice a week (in production):
@@ -75,6 +75,7 @@ A cronjob is run twice a week (in production):
 ## Querying the Gelocation Data
 
  You can retrieve geolocation data from the `/api/geoips` endpoint. Ensure you use the correct basic authentication credentials to avoid receiving 401 errors. If the database does not contain an entry for the provided IP address, a 404 error is returned. Here are a few examples of service queries and responses:
+
 ```bash
 $ curl -i -u USERNAME:PASSWORD http://geo-ip-server.local/api/geoips/1.0.81.9
 HTTP/1.1 200 OK
@@ -95,7 +96,7 @@ Deploying `geo-ip-server` to production is straightforward when using fly.io, a 
 
 ### PostgreSQL Deployment
 
-The PostgreSQL instance, ready to be deployed as a backend for the `geo-ip-server` application can be found in a separate [geo-ip-server-db](https://github.com/okulik/geo-ip-server-db) repository. It was forked from fli.io's PostgreSQL template to include support for the IP4R extension. Check the repository's README.md for further instructions.
+The PostgreSQL instance, ready to be deployed as a backend for the `geo-ip-server` application can be found in a separate [geo-ip-server-db](https://github.com/okulik/geo-ip-server-db) repository. It was forked from fli.io's PostgreSQL template to remove unnecessary extensions. Check the repository's README.md for further instructions.
 
 ### Geo IP Server Deployment
 
@@ -112,11 +113,10 @@ $ fly deploy
 ## Customizing Running the Service
 
 The `geo-ip-server` depends on several environment variables where secrets or behaviour customisations are stored:
-
-- DATABASE_URL - Sets full database connection string (required in prod).
-- POOL_SIZE - Sets the size of ecto repo's pool size, defaults to 10 (prod only).
-- API_BASIC_AUTH_USERNAME - Sets api endpoint authentication user name (required, defaults to 'admin' if not in prod).
-- API_BASIC_AUTH_PASSWORD - Sets api endpoint authentication password (required, defaults to 'admin' if not in prod).
-- ADMIN_BASIC_AUTH_USERNAME - Sets admin endpoint authentication user name (required, defaults to 'admin' if not in prod).
-- ADMIN_BASIC_AUTH_PASSWORD - Sets admin endpoint authentication password (required, defaults to 'admin' if not in prod).
-- GEOLITE2_CITY_LICENSE_KEY - Your personal MaxMind license key (required)
+* DATABASE_URL - Sets full database connection string (required in prod).
+* POOL_SIZE - Sets the size of ecto repo's pool size, defaults to 10 (prod only).
+* API_BASIC_AUTH_USERNAME - Sets api endpoint authentication user name (required, defaults to 'admin' if not in prod).
+* API_BASIC_AUTH_PASSWORD - Sets api endpoint authentication password (required, defaults to 'admin' if not in prod).
+* ADMIN_BASIC_AUTH_USERNAME - Sets admin endpoint authentication user name (required, defaults to 'admin' if not in prod).
+* ADMIN_BASIC_AUTH_PASSWORD - Sets admin endpoint authentication password (required, defaults to 'admin' if not in prod).
+* GEOLITE2_CITY_LICENSE_KEY - Your personal MaxMind license key (required)
