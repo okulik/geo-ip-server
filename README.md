@@ -4,7 +4,7 @@ The Geo IP Server service provides geolocation data for given IP addresses. It e
 
 This repository serves as a template for anyone interested in running a similar service in their own hosting environment. While it's configured for fly.io hosting out of the box, you can easly adapt it for other platforms. To get started, make sure to obtain your own MaxMind license key and create a fly.io account.
 
-The see it in action, visit https://geo-ip-server-demo.fly.dev. It should display your country's flag, demonstrating how the service works.
+The see it in action, visit https://geoip.nisdom.com. It should display your country's flag, demonstrating how the service works.
 
 ## Data Management and Caching
 

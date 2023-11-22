@@ -17,6 +17,7 @@ ARG DEBIAN_VERSION=bullseye-20230612-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
+ARG PUSHGATEWAY_IMAGE="prom/pushgateway:latest"
 
 FROM ${BUILDER_IMAGE} as builder
 
@@ -58,6 +59,9 @@ COPY config/runtime.exs config/
 COPY rel rel
 RUN mix release
 
+# Reference the pushgateway image to ensure it is pulled
+FROM ${PUSHGATEWAY_IMAGE} as pushgateway
+
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
 FROM ${RUNNER_IMAGE}
@@ -97,6 +101,9 @@ COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/geo_ip_server
 
 # Copy crontab script for importing data
 COPY rel/crontab /app/crontab
+
+# Copy the pushgateway binary
+COPY --from=pushgateway --chown=nobody:root /bin/pushgateway /app/bin/pushgateway
 
 USER nobody
 

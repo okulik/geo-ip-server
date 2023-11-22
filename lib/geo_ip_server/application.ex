@@ -13,7 +13,9 @@ defmodule GeoIpServer.Application do
       # Start the Ecto repository
       GeoIpServer.Repo,
       # Start the Endpoint (http/https)
-      GeoIpServerWeb.Endpoint
+      GeoIpServerWeb.Endpoint,
+      # Start the PromEx metrics exporter
+      GeoIpServer.PromEx
     ]
 
     opts = [strategy: :one_for_one, name: GeoIpServer.Supervisor]

@@ -37,10 +37,35 @@ defmodule GeoIpServer.Release do
     {:ok, _} = Application.ensure_all_started(:geo_ip_server)
 
     # Download and import the fresh copy of GeoLite2 City data.
-    GeoIpServer.Geolite2City.download_and_import_geolite_files!()
+    stats = GeoIpServer.Geolite2City.download_and_import_geolite_files!()
+
+    # Push metrics to the Pushgateway (production only).
+    cfg = Application.get_env(:geo_ip_server, GeoIpServer.Pushgateway)
+
+    if cfg != nil do
+      Enum.each(stats, fn stat ->
+        :hackney.post(
+          ~c"http://localhost:#{cfg[:port]}/metrics/job/csv-import/instance/cronjob",
+          [],
+          body: """
+          # HELP geo_ip_server_csv_import_duration The duration in milliseconds of CSV import.
+          # TYPE geo_ip_server_csv_import_duration histogram
+          geo_ip_server_csv_import_duration{csv="#{stat.import_file}"} #{stat.running_time}
+          """
+        )
+      end)
+    end
 
     # Get the port from the PORT environment variable or default to 4000.
     port = String.to_integer(System.get_env("PORT") || "4000")
+
+    # Delete the cache after a successful download.
+    :hackney.delete(~c"http://localhost:#{port}/admin/cache", [],
+      basic_auth: {
+        to_charlist(System.get_env("ADMIN_BASIC_AUTH_USERNAME")),
+        to_charlist(System.get_env("ADMIN_BASIC_AUTH_PASSWORD"))
+      }
+    )
 
     # Delete the cache after a successful download.
     :hackney.delete(~c"http://localhost:#{port}/admin/cache", [],

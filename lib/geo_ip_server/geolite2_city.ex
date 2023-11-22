@@ -331,6 +331,14 @@ defmodule GeoIpServer.Geolite2City do
           success_count = elem(hd(:ets.lookup(stats_table, :success_count)), 1)
           error_count = elem(hd(:ets.lookup(stats_table, :error_count)), 1)
 
+          :telemetry.execute(
+            [:geo_ip_server, :csv_import, :duration],
+            %{took: t1 - t0},
+            %{
+              csv: csv
+            }
+          )
+
           DataImport.create_geolite2_import!(%{
             import_file: csv,
             import_sha256: import_sha256,

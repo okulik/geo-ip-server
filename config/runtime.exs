@@ -76,4 +76,7 @@ if config_env() == :prod do
     license_key:
       System.get_env("GEOLITE2_CITY_LICENSE_KEY") ||
         raise("environment variable GEOLITE2_CITY_LICENSE_KEY is missing")
+
+  config :geo_ip_server, GeoIpServer.Pushgateway,
+    port: String.to_integer(System.get_env("PUSHGATEWAY_PORT", "9091"))
 end

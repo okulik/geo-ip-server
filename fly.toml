@@ -11,25 +11,22 @@ swap_size_mb = 512
 [build]
 
 [deploy]
-release_command = "sh /app/release.sh"
+release_command = "sh /app/deploy-app.sh"
 
 [env]
 PHX_HOST = "geo-ip-server.fly.dev"
 PORT = "4000"
 
-[[services]]
-  processes = ["app"]
-  internal_port = 4000
-  protocol = "tcp"
-  auto_stop_machines = false
-  auto_start_machines = true
-  min_machines_running = 1
-
-[services.concurrency]
-  type = "connections"
-  hard_limit = 25
-  soft_limit = 20
-
 [processes]
-  app = "/app/bin/server"
-  cron = "supercronic /app/crontab"
+app = "/app/bin/server"
+cron = "sh /app/start-cron.sh"
+
+[[metrics]]
+port = 4000
+path = "/metrics"
+processes = ["app"]
+
+[[metrics]]
+port = 9091
+path = "/metrics"
+processes = ["cron"]

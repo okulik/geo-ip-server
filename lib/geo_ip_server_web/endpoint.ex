@@ -12,6 +12,8 @@ defmodule GeoIpServerWeb.Endpoint do
     only: GeoIpServerWeb.static_paths()
   )
 
+  plug(PromEx.Plug, prom_ex_module: GeoIpServer.PromEx)
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
