@@ -10,7 +10,7 @@ defmodule GeoIpServer.PromExPlugin do
   @impl true
   def event_metrics(_opts) do
     [
-      # CSV import Metrics
+      # Create custom Prometheus metrics
       Event.build(
         :geo_ip_server_csv_import_duration_event_metrics,
         [

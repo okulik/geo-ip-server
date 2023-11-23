@@ -1,5 +1,6 @@
 defmodule GeoIpServerWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :geo_ip_server
+  use Sentry.PlugCapture
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -29,6 +30,7 @@ defmodule GeoIpServerWeb.Endpoint do
     json_decoder: Phoenix.json_library()
   )
 
+  plug(Sentry.PlugContext)
   plug(Plug.MethodOverride)
   plug(Plug.Head)
   plug(GeoIpServerWeb.Router)

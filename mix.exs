@@ -40,6 +40,7 @@ defmodule GeoIpServer.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:sentry, "~> 9.1"},
       {:hackney, "~>1.20"},
       {:ecto_network, "~> 1.3.0"},
       {:ecto_sql, "~> 3.0"},

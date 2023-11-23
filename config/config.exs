@@ -28,4 +28,15 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+config :sentry,
+  dsn:
+    "https://87bb5bd5e933440fd2752529723fb397@o4506274286403584.ingest.sentry.io/4506274286600192",
+  environment_name: Mix.env(),
+  enable_source_code_context: true,
+  root_source_code_paths: [File.cwd!()],
+  tags: %{
+    env: "production"
+  },
+  included_environments: [:prod]
+
 import_config "#{config_env()}.exs"

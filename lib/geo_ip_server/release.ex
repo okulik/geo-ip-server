@@ -45,9 +45,9 @@ defmodule GeoIpServer.Release do
     if cfg != nil do
       Enum.each(stats, fn stat ->
         :hackney.post(
-          ~c"http://localhost:#{cfg[:port]}/metrics/job/csv-import/instance/cronjob",
+          "http://localhost:#{cfg[:port]}/metrics/job/csv-import/instance/cronjob",
           [],
-          body: """
+          """
           # HELP geo_ip_server_csv_import_duration The duration in milliseconds of CSV import.
           # TYPE geo_ip_server_csv_import_duration histogram
           geo_ip_server_csv_import_duration{csv="#{stat.import_file}"} #{stat.running_time}
@@ -58,14 +58,6 @@ defmodule GeoIpServer.Release do
 
     # Get the port from the PORT environment variable or default to 4000.
     port = String.to_integer(System.get_env("PORT") || "4000")
-
-    # Delete the cache after a successful download.
-    :hackney.delete(~c"http://localhost:#{port}/admin/cache", [],
-      basic_auth: {
-        to_charlist(System.get_env("ADMIN_BASIC_AUTH_USERNAME")),
-        to_charlist(System.get_env("ADMIN_BASIC_AUTH_PASSWORD"))
-      }
-    )
 
     # Delete the cache after a successful download.
     :hackney.delete(~c"http://localhost:#{port}/admin/cache", [],
