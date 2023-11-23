@@ -6,6 +6,7 @@ defmodule GeoIpServer.PromExPlugin do
   use PromEx.Plugin
 
   @csv_import_duration_event [:geo_ip_server, :csv_import, :duration]
+  @csv_import_duration_event_buckets [100_000, 200_000, 500_000, 1_000_000]
 
   @impl true
   def event_metrics(_opts) do
@@ -22,11 +23,15 @@ defmodule GeoIpServer.PromExPlugin do
             unit: {:native, :nanosecond},
             tags: [:csv],
             tag_values: &get_csv_file_name/1,
-            reporter_options: [buckets: [100_000, 200_000, 500_000, 1_000_000]]
+            reporter_options: [buckets: @csv_import_duration_event_buckets]
           )
         ]
       )
     ]
+  end
+
+  def csv_import_duration_event_buckets do
+    @csv_import_duration_event_buckets
   end
 
   defp get_csv_file_name(%{csv: csv_file_name}) do

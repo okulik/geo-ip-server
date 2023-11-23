@@ -2,5 +2,5 @@
 
 set -e
 
-/app/bin/pushgateway &
+/app/bin/prom-aggregation-gateway --apiListen :9091 &
 supercronic /app/crontab

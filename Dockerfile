@@ -17,7 +17,7 @@ ARG DEBIAN_VERSION=bullseye-20230612-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
-ARG PUSHGATEWAY_IMAGE="prom/pushgateway:latest"
+ARG PROM_AGGREGATION_GATEWAY_IMAGE="ghcr.io/zapier/prom-aggregation-gateway:v0.8.1"
 
 FROM ${BUILDER_IMAGE} as builder
 
@@ -59,8 +59,8 @@ COPY config/runtime.exs config/
 COPY rel rel
 RUN mix release
 
-# Reference the pushgateway image to ensure it is pulled
-FROM ${PUSHGATEWAY_IMAGE} as pushgateway
+# Reference the prometheus aggregation gateway image to ensure it is pulled
+FROM ${PROM_AGGREGATION_GATEWAY_IMAGE} as promagggateway
 
 # start a new build stage so that the final image will only contain
 # the compiled release and other runtime necessities
@@ -71,7 +71,7 @@ ENV SUPERCRONIC_URL https://github.com/aptible/supercronic/releases/download/v0.
 ENV SUPERCRONIC supercronic-linux-amd64
 ENV SUPERCRONIC_SHA1SUM 7dadd4ac827e7bd60b386414dfefc898ae5b6c63
 
-RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales curl \
+RUN apt-get update -y && apt-get install -y libstdc++6 openssl libncurses5 locales curl musl \
   && curl -fsSLO "$SUPERCRONIC_URL" \
   && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
   && chmod +x "$SUPERCRONIC" \
@@ -102,8 +102,8 @@ COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/geo_ip_server
 # Copy crontab script for importing data
 COPY rel/crontab /app/crontab
 
-# Copy the pushgateway binary
-COPY --from=pushgateway --chown=nobody:root /bin/pushgateway /app/bin/pushgateway
+# Copy the aggregation gateway binary
+COPY --from=promagggateway --chown=nobody:root /prom-aggregation-gateway /app/bin/prom-aggregation-gateway
 
 USER nobody
 

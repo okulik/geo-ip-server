@@ -47,11 +47,7 @@ defmodule GeoIpServer.Release do
         :hackney.post(
           "http://localhost:#{cfg[:port]}/metrics/job/csv-import/instance/cronjob",
           [],
-          """
-          # HELP geo_ip_server_csv_import_duration The duration in milliseconds of CSV import.
-          # TYPE geo_ip_server_csv_import_duration histogram
-          geo_ip_server_csv_import_duration{csv="#{stat.import_file}"} #{stat.running_time}
-          """
+          print_csv_import_duration_event_metrics(stat.import_file, stat.running_time)
         )
       end)
     end
@@ -66,6 +62,33 @@ defmodule GeoIpServer.Release do
         to_charlist(System.get_env("ADMIN_BASIC_AUTH_PASSWORD"))
       }
     )
+  end
+
+  defp print_csv_import_duration_event_metrics(import_file, running_time) do
+    buckets = assign_csv_import_duration_event_buckets(running_time)
+
+    text = """
+      # HELP geo_ip_server_csv_import_duration The duration in milliseconds of CSV import.
+      # TYPE geo_ip_server_csv_import_duration histogram
+      geo_ip_server_csv_import_duration_sum{csv="#{import_file}"} #{running_time}
+      geo_ip_server_csv_import_duration_count{csv="#{import_file}"} 1
+    """
+
+    Enum.reduce(buckets, text, fn {bucket, val}, acc ->
+      acc <>
+        """
+          geo_ip_server_csv_import_duration_bucket{csv="#{import_file}",le="#{bucket}"} #{val}
+        """
+    end)
+  end
+
+  defp assign_csv_import_duration_event_buckets(val) do
+    buckets = GeoIpServer.PromExPlugin.csv_import_duration_event_buckets()
+
+    Enum.reduce(buckets, %{}, fn bucket, acc ->
+      Map.put(acc, to_string(bucket), if(val <= bucket, do: 1, else: 0))
+    end)
+    |> Map.put("+Inf", 1)
   end
 
   defp repos do
