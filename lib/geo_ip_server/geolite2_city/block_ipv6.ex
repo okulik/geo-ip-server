@@ -20,6 +20,7 @@ defmodule GeoIpServer.Geolite2City.BlockIpv6 do
     field(:latitude, :float)
     field(:longitude, :float)
     field(:accuracy_radius, :integer)
+    field(:is_anycast, :boolean)
     timestamps(type: :utc_datetime)
   end
 
@@ -39,6 +40,7 @@ defmodule GeoIpServer.Geolite2City.BlockIpv6 do
       :latitude,
       :longitude,
       :accuracy_radius,
+      :is_anycast,
       :inserted_at,
       :updated_at
     ])
@@ -74,7 +76,8 @@ defmodule GeoIpServer.Geolite2City.BlockIpv6 do
         postal_code,
         latitude,
         longitude,
-        accuracy_radius
+        accuracy_radius,
+        is_anycast
       ] ->
         changeset(%__MODULE__{}, %{
           network: network,
@@ -87,6 +90,7 @@ defmodule GeoIpServer.Geolite2City.BlockIpv6 do
           latitude: latitude,
           longitude: longitude,
           accuracy_radius: accuracy_radius,
+          is_anycast: is_anycast,
           inserted_at: now,
           updated_at: now
         })
@@ -118,6 +122,7 @@ defimpl String.Chars, for: GeoIpServer.Geolite2City.BlockIpv6 do
       "latitude: #{val_for_log(block_ipv6.latitude)}",
       "longitude: #{val_for_log(block_ipv6.longitude)}",
       "accuracy_radius: #{val_for_log(block_ipv6.accuracy_radius)}",
+      "is_anycast: #{val_for_log(block_ipv6.is_anycast)}",
       "inserted_at: #{val_for_log(block_ipv6.inserted_at)}",
       "updated_at: #{val_for_log(block_ipv6.updated_at)}"
     ]

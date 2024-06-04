@@ -31,14 +31,6 @@ config :geo_ip_server, GeoIpServerWeb.AdminAuthentication,
   username: System.get_env("ADMIN_BASIC_AUTH_USERNAME", "admin"),
   password: System.get_env("ADMIN_BASIC_AUTH_PASSWORD", "admin")
 
-# Configure GeoLite2 City database download URLs, license key, etc.
-config :geo_ip_server, GeoIpServer.Geolite2City,
-  download_url:
-    "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key=",
-  download_url_sha256:
-    "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip.sha256&license_key=",
-  license_key: System.get_env("GEOLITE2_CITY_LICENSE_KEY", "fake-key")
-
 # Do not include metadata nor timestamps in development logs
 config :logger, :console,
   format: "[$level] $message\n",

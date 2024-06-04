@@ -67,16 +67,6 @@ if config_env() == :prod do
       System.get_env("ADMIN_BASIC_AUTH_PASSWORD") ||
         raise("environment variable ADMIN_BASIC_AUTH_PASSWORD is missing")
 
-  # Configure GeoLite2 City database download URLs, license key, etc.
-  config :geo_ip_server, GeoIpServer.Geolite2City,
-    download_url:
-      "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key=",
-    download_url_sha256:
-      "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip.sha256&license_key=",
-    license_key:
-      System.get_env("GEOLITE2_CITY_LICENSE_KEY") ||
-        raise("environment variable GEOLITE2_CITY_LICENSE_KEY is missing")
-
   config :geo_ip_server, GeoIpServer.Pushgateway,
     port: String.to_integer(System.get_env("PUSHGATEWAY_PORT", "9091"))
 end

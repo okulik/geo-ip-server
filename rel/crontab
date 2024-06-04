@@ -1,1 +1,1 @@
-51 23 * * 1,4 /app/bin/import_geolite2
+51 23 * * 1,4 sh /app/dl-and-import-geolite2.sh

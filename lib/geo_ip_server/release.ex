@@ -28,16 +28,16 @@ defmodule GeoIpServer.Release do
   end
 
   @doc """
-  Imports the latest GeoLite2 City data into a database.
+  Imports the GeoLite2 City data from temporary folder into a database.
   """
-  def import_geolite2 do
+  def import_geolite2(tmp_dir) do
     load_app()
     # Start the application except the web server (as PHX_SERVER is only
     # set when the web server is started by running bin/server in production).
     {:ok, _} = Application.ensure_all_started(:geo_ip_server)
 
-    # Download and import the fresh copy of GeoLite2 City data.
-    stats = GeoIpServer.Geolite2City.download_and_import_geolite_files!()
+    # Import downloaded GeoLite2 City data into a database.
+    stats = GeoIpServer.Geolite2City.import_geolite_files!(tmp_dir)
 
     # Push metrics to the Pushgateway (production only).
     cfg = Application.get_env(:geo_ip_server, GeoIpServer.Pushgateway)

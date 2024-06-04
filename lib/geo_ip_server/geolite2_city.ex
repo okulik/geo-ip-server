@@ -7,7 +7,6 @@ defmodule GeoIpServer.Geolite2City do
 
   alias GeoIpServer.Cache
   alias GeoIpServer.DataImport
-  alias GeoIpServer.Downloader
   alias GeoIpServer.Geolite2City.{BlockIpv4, BlockIpv6, Location}
   alias GeoIpServer.Repo
   alias NimbleCSV.RFC4180, as: CSV
@@ -25,7 +24,6 @@ defmodule GeoIpServer.Geolite2City do
     @blocks_ipv6
   ]
 
-  @random_file_name_length 10
   @csv_batch_size 1000
 
   @doc """
@@ -184,17 +182,16 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   @doc """
-    Downloads the Geolite2 City database files, validates the sha256 of the
-    downloaded zip file, extracts the required files from the zip file, and
-    imports the extracted files into the database. This function is typically
-    called from a CRON job, or from a mix task.
+    Validates the sha256 of the downloaded zip file, extracts the required
+    files from the zip file, and imports the extracted files into the database.
+    This function is typically called from a CRON job, or from a mix task.
     Returns a list of Geolite2Import structs, one for each imported file.
     Locations are imported first, followed by BlockIpv4, and then BlockIpv6.
     Each file is saved to a separate table in the database.
 
     ## Examples
 
-        iex> download_and_import_geolite_files!()
+        iex> import_geolite_files!("/tmp/geolite2-2024-06-04-18-01-00")
         [
           %Geolite2Import{
             import_file: "GeoLite2-City-Locations-en.csv",
@@ -219,56 +216,48 @@ defmodule GeoIpServer.Geolite2City do
           }
         ]
   """
-  def download_and_import_geolite_files! do
-    # Create a temporary directory for the downloaded files.
-    temp_dir = Path.join([System.tmp_dir!(), Downloader.random_string(@random_file_name_length)])
-    File.mkdir_p!(temp_dir)
+  def import_geolite_files!(tmp_dir) do
+    # Get the full paths to the downloaded files.
+    {geolite_sha256_path} =
+      Path.join([tmp_dir, "*.zip.sha256"])
+      |> Path.wildcard()
+      |> List.to_tuple()
 
-    # Download the zip file and the sha256 file into the temporary directory.
-    geolite_sha256_name = Downloader.download_from_url(download_url_sha256(), temp_dir)
-    geolite_zip_name = Downloader.download_from_url(download_url(), temp_dir)
+    {geolite_zip_path} =
+      Path.join([tmp_dir, "*.zip"])
+      |> Path.wildcard()
+      |> List.to_tuple()
 
-    # Get the full path to the downloaded files.
-    geolite_sha256_path = Path.join([temp_dir, geolite_sha256_name])
-    geolite_zip_path = Path.join([temp_dir, geolite_zip_name])
+    # Validate the sha256 of the downloaded geoip zip file.
+    import_sha256 = validate_sha256!(geolite_sha256_path, geolite_zip_path)
 
-    try do
-      # Validate the sha256 of the downloaded geoip zip file.
-      import_sha256 = validate_sha256!(geolite_sha256_path, geolite_zip_path)
+    # Extracted basename of the zip file without the extension (e.g. GeoLite2-City-CSV_20232310).
+    zip_folder = Path.basename(Path.basename(geolite_zip_path), ".zip")
 
-      # Extracted basename of the zip file without the extension (e.g. GeoLite2-City-CSV_20232310).
-      zip_folder = Path.basename(geolite_zip_name, ".zip")
+    # Extract only required files from the zip file.
+    file_list =
+      case :zip.unzip(String.to_charlist(geolite_zip_path), [
+             {:file_list, unzip_file_list(zip_folder)},
+             {:cwd, String.to_charlist(tmp_dir)}
+           ]) do
+        {:ok, file_list} ->
+          file_list
 
-      # Extract only required files from the zip file.
-      file_list =
-        case :zip.unzip(String.to_charlist(geolite_zip_path), [
-               {:file_list, unzip_file_list(zip_folder)},
-               {:cwd, String.to_charlist(temp_dir)}
-             ]) do
-          {:ok, file_list} ->
-            file_list
+        _ ->
+          raise "failed to unzip #{geolite_zip_path}"
+      end
 
-          _ ->
-            raise "failed to unzip #{geolite_zip_path}"
-        end
+    # Extract the timestamp from the zip folder name (e.g. 20232310).
+    @zip_folder_prefix <> ts = zip_folder
 
-      # Extract the timestamp from the zip folder name (e.g. 20232310).
-      @zip_folder_prefix <> ts = zip_folder
-
-      stats =
-        file_list
-        |> Enum.map(fn file_name -> Path.basename(file_name) end)
-        |> Enum.map(fn file_name ->
-          import_csv_file!(temp_dir, zip_folder, file_name,
-            sha: import_sha256,
-            ts: ts
-          )
-        end)
-
-      stats
-    after
-      File.rm_rf!(temp_dir)
-    end
+    file_list
+    |> Enum.map(fn file_name -> Path.basename(file_name) end)
+    |> Enum.map(fn file_name ->
+      import_csv_file!(tmp_dir, zip_folder, file_name,
+        sha: import_sha256,
+        ts: ts
+      )
+    end)
   end
 
   @doc """
@@ -400,16 +389,6 @@ defmodule GeoIpServer.Geolite2City do
     end
 
     sha256
-  end
-
-  defp download_url do
-    Application.get_env(:geo_ip_server, GeoIpServer.Geolite2City)[:download_url] <>
-      Application.get_env(:geo_ip_server, GeoIpServer.Geolite2City)[:license_key]
-  end
-
-  defp download_url_sha256 do
-    Application.get_env(:geo_ip_server, GeoIpServer.Geolite2City)[:download_url_sha256] <>
-      Application.get_env(:geo_ip_server, GeoIpServer.Geolite2City)[:license_key]
   end
 
   defp unzip_file_list(folder_prefix) do

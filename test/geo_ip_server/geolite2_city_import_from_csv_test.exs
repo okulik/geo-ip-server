@@ -23,8 +23,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
     ##########################################################
     test "import_from_stream/3 for Geolite2-City-Blocks-IPv4.csv with all valid rows" do
       csv = """
-      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius
-      1.0.0.0/24,2077456,2077456,,0,0,,-33.1230,143.4567,1000
+      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius,is_anycast
+      1.0.0.0/24,2077456,2077456,,0,0,,-33.1230,143.4567,1000,
       """
 
       csv
@@ -47,6 +47,7 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
       assert block_ipv4.latitude == -33.1230
       assert block_ipv4.longitude == 143.4567
       assert block_ipv4.accuracy_radius == 1000
+      assert block_ipv4.is_anycast == false
 
       imp = hd(DataImport.get_all_geolite2_imports())
       assert imp.import_file == "GeoLite2-City-Blocks-IPv4.csv"
@@ -58,8 +59,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
 
     test "import_locations_from_stream/1 for Geolite2-City-Blocks-IPv4.csv with a missing IP address" do
       csv = """
-      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius
-      ,1814991,1814991,,0,0,,34.1234,113.1234,1000
+      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius,is_anycast
+      ,1814991,1814991,,0,0,,34.1234,113.1234,1000,
       """
 
       csv
@@ -80,8 +81,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
 
     test "import_locations_from_stream/1 for Geolite2-City-Blocks-IPv4.csv with invalid IP address" do
       csv = """
-      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius
-      badip,1814991,1814991,,0,0,,34.1234,113.1234,1000
+      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius,is_anycast
+      badip,1814991,1814991,,0,0,,34.1234,113.1234,1000,
       """
 
       csv
@@ -105,8 +106,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
     ##########################################################
     test "import_from_stream/3 for Geolite2-City-Blocks-IP6v.csv with all valid rows" do
       csv = """
-      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius
-      2a7:1c44:39f3:aa::/64,2657896,,,0,0,8000,47.1234,8.1234,100
+      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius,is_anycast
+      2a7:1c44:39f3:aa::/64,2657896,,,0,0,8000,47.1234,8.1234,100,
       """
 
       csv
@@ -129,6 +130,7 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
       assert block_ipv6.latitude == 47.1234
       assert block_ipv6.longitude == 8.1234
       assert block_ipv6.accuracy_radius == 100
+      assert block_ipv6.is_anycast == false
 
       imp = hd(DataImport.get_all_geolite2_imports())
       assert imp.import_file == "GeoLite2-City-Blocks-IPv6.csv"
@@ -140,8 +142,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
 
     test "import_locations_from_stream/1 for Geolite2-City-Blocks-IPv6.csv with a missing IP address" do
       csv = """
-      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius
-      ,2657896,,,0,0,8000,47.1234,8.1234,100
+      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius,is_anycast
+      ,2657896,,,0,0,8000,47.1234,8.1234,100,
       """
 
       csv
@@ -162,8 +164,8 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
 
     test "import_locations_from_stream/1 for Geolite2-City-Blocks-IPv6.csv with invalid IP address" do
       csv = """
-      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius
-      badip,2657896,,,0,0,8000,47.1234,8.1234,100
+      network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,is_anonymous_proxy,is_satellite_provider,postal_code,latitude,longitude,accuracy_radius,is_anycast
+      badip,2657896,,,0,0,8000,47.1234,8.1234,100,
       """
 
       csv

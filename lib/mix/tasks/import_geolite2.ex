@@ -13,9 +13,13 @@ defmodule Mix.Tasks.ImportGeolite2 do
   Downloads and imports ip addresses from the CSV files archive.
   """
   @impl Mix.Task
-  def run(_args) do
+  def run(args) do
     Mix.Task.run("app.start")
 
-    Release.import_geolite2()
+    {tmp_dir} =
+      Enum.take(args, 1)
+      |> List.to_tuple()
+
+    Release.import_geolite2(tmp_dir)
   end
 end
