@@ -1,10 +1,12 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
+    open-pull-requests-limit: 5
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "mix"
+    open-pull-requests-limit: 5
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
