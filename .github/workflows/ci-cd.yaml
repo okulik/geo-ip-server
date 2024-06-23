@@ -131,7 +131,7 @@ jobs:
     needs: [test]
     steps:
       - name: Checks out the code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
