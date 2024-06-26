@@ -42,7 +42,7 @@ defmodule GeoIpServer.MixProject do
     [
       {:sentry, "~> 10.6"},
       {:hackney, "~>1.20"},
-      {:ecto_network, "~> 1.3.0"},
+      {:ecto_network, "~> 1.5.0"},
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.4"},
       {:nebulex, "~> 2.5"},
