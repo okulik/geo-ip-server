@@ -58,7 +58,7 @@ defmodule GeoIpServer.MixProject do
       {:benchee, "~> 1.1", only: [:dev], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:meck, "~> 0.9", only: [:test], runtime: false}
+      {:meck, "~> 1.0", only: [:test], runtime: false}
     ]
   end
 
