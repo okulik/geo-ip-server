@@ -36,7 +36,7 @@ jobs:
     steps:
       -
         name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       -
         name: Set up Elixir
         uses: erlef/setup-beam@v1
@@ -119,7 +119,7 @@ jobs:
     needs: [test]
     steps:
       - name: Checks out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup flyctl
         uses: superfly/flyctl-actions/setup-flyctl@master
