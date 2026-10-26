@@ -29,20 +29,17 @@ jobs:
           --health-retries 5
     runs-on: ubuntu-latest
     name: Run Tests
-    strategy:
-      matrix:
-        otp: ["26.1.1"] # Define the OTP version [required]
-        elixir: ["1.15.6-otp-26"] # Define the elixir version [required]
     steps:
       -
         name: Checkout code
         uses: actions/checkout@v7
       -
         name: Set up Elixir
+        id: beam
         uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
+          version-file: .tool-versions
+          version-type: strict
       -
         name: Cache deps
         id: cache-deps
@@ -51,9 +48,9 @@ jobs:
           cache-name: cache-elixir-deps
         with:
           path: deps
-          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-${{ env.cache-name }}-
+            ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-
       -
         name: Cache compiled build
         id: cache-build
@@ -62,10 +59,9 @@ jobs:
           cache-name: cache-compiled-build
         with:
           path: _build
-          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-${{ env.cache-name }}-
-            ${{ runner.os }}-mix-
+            ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-
       -
         name: Install dependencies
         run: mix deps.get
