@@ -12,7 +12,7 @@ defmodule GeoIpServer.MixProject do
       deps: deps(),
       consolidated_protocols: Mix.env() != :test,
       dialyzer: [
-        plt_add_apps: [:mix],
+        plt_add_apps: [:mix, :ex_unit],
         plt_file: {:no_warn, "priv/plts/project.plt"}
       ]
     ]

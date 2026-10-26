@@ -80,7 +80,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           key: |
-            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'mix.lock') }}
           restore-keys: |
             plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
           path: |
@@ -96,7 +96,7 @@ jobs:
         if: steps.plt_cache.outputs.cache-hit != 'true'
         with:
           key: |
-            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'mix.lock') }}
           path: |
             priv/plts
       -
