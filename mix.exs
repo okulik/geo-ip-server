@@ -14,8 +14,7 @@ defmodule GeoIpServer.MixProject do
       consolidated_protocols: Mix.env() != :test,
       dialyzer: [
         plt_add_apps: [:mix],
-        plt_file: {:no_warn, "priv/plts/project.plt"},
-        ignore_warnings: ".dialyzer_ignore.exs"
+        plt_file: {:no_warn, "priv/plts/project.plt"}
       ]
     ]
   end
