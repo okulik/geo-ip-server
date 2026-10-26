@@ -7,6 +7,8 @@ defmodule GeoIpServer.Geolite2City.BlockIpv4 do
 
   alias GeoIpServer.Geolite2City.Block
 
+  @type t :: %__MODULE__{}
+
   @primary_key {:network, EctoNetwork.CIDR, []}
   schema "geolite2_city_blocks_ipv4" do
     for {name, type} <- Block.fields(), do: field(name, type)

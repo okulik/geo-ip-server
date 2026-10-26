@@ -7,6 +7,7 @@ defmodule GeoIpServer.Geolite2City do
 
   alias GeoIpServer.Cache
   alias GeoIpServer.DataImport
+  alias GeoIpServer.DataImport.Geolite2Import
   alias GeoIpServer.Geolite2City.{BlockIpv4, BlockIpv6, Location}
   alias GeoIpServer.Repo
   alias NimbleCSV.RFC4180, as: CSV
@@ -46,6 +47,8 @@ defmodule GeoIpServer.Geolite2City do
       {:error, :invalid_ip}
 
   """
+  @spec get_block_ipv4(String.t() | Postgrex.INET.t()) ::
+          {:ok, BlockIpv4.t()} | {:error, :not_found | :invalid_ip}
   def get_block_ipv4(cidr), do: get_block(BlockIpv4, cidr)
 
   @doc """
@@ -59,6 +62,7 @@ defmodule GeoIpServer.Geolite2City do
       iex> create_block_ipv4!(%{field: bad_value})
       ** (Ecto.InvalidChangesetError)
   """
+  @spec create_block_ipv4!(map()) :: BlockIpv4.t()
   def create_block_ipv4!(attrs \\ %{}) do
     %BlockIpv4{}
     |> BlockIpv4.changeset(attrs)
@@ -84,6 +88,8 @@ defmodule GeoIpServer.Geolite2City do
       iex> GeoIpServer.Geolite2City.get_block_ipv6("bad-cidr")
       {:error, :invalid_ip}
   """
+  @spec get_block_ipv6(String.t() | Postgrex.INET.t()) ::
+          {:ok, BlockIpv6.t()} | {:error, :not_found | :invalid_ip}
   def get_block_ipv6(cidr), do: get_block(BlockIpv6, cidr)
 
   @doc """
@@ -97,6 +103,7 @@ defmodule GeoIpServer.Geolite2City do
       iex> create_block_ipv6!(%{})
       ** (Ecto.InvalidChangesetError)
   """
+  @spec create_block_ipv6!(map()) :: BlockIpv6.t()
   def create_block_ipv6!(attrs \\ %{}) do
     %BlockIpv6{}
     |> BlockIpv6.changeset(attrs)
@@ -121,6 +128,7 @@ defmodule GeoIpServer.Geolite2City do
       iex> GeoIpServer.Geolite2City.get_location(9999999)
       {:error, :not_found}
   """
+  @spec get_location(integer()) :: {:ok, Location.t()} | {:error, :not_found}
   def get_location(geoname_id) do
     case Repo.get(Location, geoname_id) do
       %Location{} = location -> {:ok, location}
@@ -139,6 +147,7 @@ defmodule GeoIpServer.Geolite2City do
       iex> create_location!(%{})
       ** (Ecto.InvalidChangesetError)
   """
+  @spec create_location!(map()) :: Location.t()
   def create_location!(attrs \\ %{}) do
     %Location{}
     |> Location.changeset(attrs)
@@ -170,6 +179,8 @@ defmodule GeoIpServer.Geolite2City do
       {:error, :invalid_ip}
 
   """
+  @spec get_locations_for_ip(String.t()) ::
+          {:ok, [Location.t(), ...]} | {:error, :not_found | :invalid_ip}
   def get_locations_for_ip(ip_address) do
     with {:ok, address} <- :inet.parse_strict_address(to_charlist(ip_address)),
          {:ok, [_ | _]} = ok <-
@@ -216,6 +227,7 @@ defmodule GeoIpServer.Geolite2City do
         }
       ]
   """
+  @spec import_geolite_files!(Path.t()) :: [Geolite2Import.t()]
   def import_geolite_files!(tmp_dir) do
     # Get the full paths to the downloaded files.
     [sha256_path] = Path.wildcard(Path.join(tmp_dir, "*.zip.sha256"))
@@ -260,6 +272,7 @@ defmodule GeoIpServer.Geolite2City do
         running_time: 12
       }
   """
+  @spec import_csv_file!(Path.t(), String.t(), String.t(), keyword()) :: Geolite2Import.t()
   def import_csv_file!(temp_dir, zip_folder, csv, opts) do
     Path.join([temp_dir, zip_folder, csv])
     |> File.stream!()
@@ -277,6 +290,7 @@ defmodule GeoIpServer.Geolite2City do
     * `:sha` - sha256 of the imported zip file (required)
     * `:ts` - timestamp of the GeoLite2 release (required)
   """
+  @spec import_from_stream(Enumerable.t(), String.t(), keyword()) :: Geolite2Import.t()
   def import_from_stream(file_stream, csv, opts) do
     import_sha256 = Keyword.fetch!(opts, :sha)
     ts = Keyword.fetch!(opts, :ts)

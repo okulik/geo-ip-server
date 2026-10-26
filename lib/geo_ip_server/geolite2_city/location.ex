@@ -28,6 +28,8 @@ defmodule GeoIpServer.Geolite2City.Location do
   ]
   @column_count length(@columns)
 
+  @type t :: %__MODULE__{}
+
   @derive {Jason.Encoder, except: [:__meta__]}
   @primary_key {:geoname_id, :integer, []}
   schema "geolite2_city_locations" do

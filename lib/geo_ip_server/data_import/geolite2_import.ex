@@ -7,6 +7,8 @@ defmodule GeoIpServer.DataImport.Geolite2Import do
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   schema "geolite2_imports" do
     field :import_file, :string
     field :timestamp, :string
