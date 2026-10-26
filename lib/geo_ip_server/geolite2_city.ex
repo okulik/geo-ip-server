@@ -3,7 +3,7 @@ defmodule GeoIpServer.Geolite2City do
   The Geolite2City context.
   """
 
-  import GeoIpServer.Utils, only: [struct_from_sql_query_result: 2, map_from_sql_query_result: 1]
+  import Ecto.Query, only: [from: 2]
 
   alias GeoIpServer.Cache
   alias GeoIpServer.DataImport
@@ -47,7 +47,7 @@ defmodule GeoIpServer.Geolite2City do
         {:error, :invalid_range}
 
   """
-  def get_block_ipv4(cidr), do: get_block_ip(cidr, type: :ip4)
+  def get_block_ipv4(cidr), do: get_block(BlockIpv4, cidr)
 
   @doc """
     Creates a BlockIpv4.
@@ -86,7 +86,7 @@ defmodule GeoIpServer.Geolite2City do
         iex> GeoIpServer.Geolite2City.get_block_ipv6("bad-cider")
         {:error, :invalid_range}
   """
-  def get_block_ipv6(cidr), do: get_block_ip(cidr, type: :ip6)
+  def get_block_ipv6(cidr), do: get_block(BlockIpv6, cidr)
 
   @doc """
     Creates a BlockIpv6.
@@ -175,9 +175,12 @@ defmodule GeoIpServer.Geolite2City do
 
   """
   def get_locations_for_ip(ip_address) do
-    case get_locations_for_ip(ip_address, type: :ip4) do
-      {:error, :invalid_ip} -> get_locations_for_ip(ip_address, type: :ip6)
-      ret -> ret
+    case :inet.parse_strict_address(to_charlist(ip_address)) do
+      {:ok, address} ->
+        Cache.fetch_or_store(ip_address, fn -> {:ok, locations_query(address)} end)
+
+      {:error, :einval} ->
+        {:error, :invalid_ip}
     end
   end
 
@@ -443,64 +446,35 @@ defmodule GeoIpServer.Geolite2City do
         conflict_target: [:network]
       )
 
-  defp get_locations_for_ip(ip_address, type: type) do
-    case parse_ip_address(ip_address, type: type) do
-      {:ok, _} ->
-        Cache.fetch_or_store(ip_address, fn -> run_locations_query(ip_address, type: type) end)
+  defp locations_query(address) do
+    block_schema = if tuple_size(address) == 4, do: BlockIpv4, else: BlockIpv6
 
-      {:error, :einval} ->
-        {:error, :invalid_ip}
+    Repo.all(
+      from(l in Location,
+        join: b in ^block_schema,
+        on: b.geoname_id == l.geoname_id,
+        where: fragment("? >>= ?", b.network, ^%Postgrex.INET{address: address})
+      )
+    )
+  end
+
+  defp get_block(schema, cidr) do
+    with {:ok, network} <- EctoNetwork.CIDR.cast(cidr),
+         %{} = block <-
+           Repo.one(
+             from(b in schema,
+               where: fragment("? >>= ?", b.network, ^network),
+               limit: 1
+             )
+           ) do
+      {:ok, block}
+    else
+      :error -> {:error, :invalid_ip}
+      nil -> {:error, :not_found}
     end
   end
-
-  defp run_locations_query(ip_address, type: type) do
-    res =
-      Repo.query!("""
-      SELECT l.*
-      FROM geolite2_city_blocks_#{table_suffix(type)} AS r
-      JOIN geolite2_city_locations AS l
-      ON l.geoname_id = r.geoname_id
-      WHERE r.network >>= '#{ip_address}'
-      """)
-
-    {:ok, map_from_sql_query_result(res)}
-  end
-
-  defp get_block_ip(cidr, type: type) do
-    case EctoNetwork.CIDR.cast(cidr) do
-      {:ok, _} ->
-        res =
-          Repo.query!(
-            "SELECT r.* " <>
-              "FROM geolite2_city_blocks_#{table_suffix(type)} AS r " <>
-              "WHERE r.network >>= '#{cidr}' " <>
-              "LIMIT 1"
-          )
-
-        case struct_from_sql_query_result(res, to: get_module(type)) do
-          [] -> {:error, :not_found}
-          [rec] -> {:ok, rec}
-        end
-
-      :error ->
-        {:error, :invalid_ip}
-    end
-  end
-
-  defp parse_ip_address(addr, type: type) when type == :ip4 do
-    :inet.parse_ipv4strict_address(to_charlist(addr))
-  end
-
-  defp parse_ip_address(addr, type: type) when type == :ip6,
-    do: :inet.parse_ipv6strict_address(to_charlist(addr))
 
   defp file_name_to_struct(csv) when csv == @locations, do: %Location{}
   defp file_name_to_struct(csv) when csv == @blocks_ipv4, do: %BlockIpv4{}
   defp file_name_to_struct(csv) when csv == @blocks_ipv6, do: %BlockIpv6{}
-
-  defp table_suffix(type) when type == :ip4, do: "ipv4"
-  defp table_suffix(type) when type == :ip6, do: "ipv6"
-
-  defp get_module(type) when type == :ip4, do: BlockIpv4
-  defp get_module(type) when type == :ip6, do: BlockIpv6
 end

@@ -24,29 +24,6 @@ defmodule GeoIpServer.Utils do
   end
 
   @doc """
-    Converts raw SQL query's result to a map.
-  """
-  def map_from_sql_query_result(query_result) do
-    if query_result.num_rows == 0 do
-      []
-    else
-      Enum.map(query_result.rows, fn row ->
-        Enum.zip(query_result.columns, row)
-        |> Enum.into(%{})
-      end)
-    end
-  end
-
-  @doc """
-    Converts raw SQL query's result to a struct.
-  """
-  def struct_from_sql_query_result(query_result, to: target_struct) do
-    Enum.map(query_result.rows, fn row ->
-      struct(target_struct, Enum.zip(Enum.map(query_result.columns, &String.to_atom/1), row))
-    end)
-  end
-
-  @doc """
     Converts a value to a string for logging purposes.
   """
   def val_for_log(val) when is_nil(val), do: "<nil>"
