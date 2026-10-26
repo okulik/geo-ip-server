@@ -1,11 +1,11 @@
 defmodule GeoIpServer.DataImport.Geolite2Import do
-  use Ecto.Schema
-
-  import Ecto.Changeset
-
   @moduledoc """
   Contains the schema for the geolite2_imports table.
   """
+
+  use Ecto.Schema
+
+  import Ecto.Changeset
 
   schema "geolite2_imports" do
     field :import_file, :string
