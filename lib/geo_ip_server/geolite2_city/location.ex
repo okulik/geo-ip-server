@@ -1,13 +1,32 @@
 defmodule GeoIpServer.Geolite2City.Location do
+  @moduledoc """
+  Contains the schema for the geolite2_city_locations table.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset
 
   require Logger
 
-  @moduledoc """
-  Contains the schema for the locations table.
-  """
+  # Columns in the order they appear in the GeoLite2 locations CSV file.
+  @columns [
+    :geoname_id,
+    :locale_code,
+    :continent_code,
+    :continent_name,
+    :country_iso_code,
+    :country_name,
+    :subdivision_1_iso_code,
+    :subdivision_1_name,
+    :subdivision_2_iso_code,
+    :subdivision_2_name,
+    :city_name,
+    :metro_code,
+    :time_zone,
+    :is_in_european_union
+  ]
+  @column_count length(@columns)
 
   @derive {Jason.Encoder, except: [:__meta__]}
   @primary_key {:geoname_id, :integer, []}
@@ -29,28 +48,11 @@ defmodule GeoIpServer.Geolite2City.Location do
   end
 
   @doc """
-  Converts a row from the CSV file to a Location changeset.
+  Builds a Location changeset.
   """
   def changeset(location, attrs) do
     location
-    |> cast(attrs, [
-      :geoname_id,
-      :locale_code,
-      :continent_code,
-      :continent_name,
-      :country_iso_code,
-      :country_name,
-      :subdivision_1_iso_code,
-      :subdivision_1_name,
-      :subdivision_2_iso_code,
-      :subdivision_2_name,
-      :city_name,
-      :metro_code,
-      :time_zone,
-      :is_in_european_union,
-      :inserted_at,
-      :updated_at
-    ])
+    |> cast(attrs, @columns ++ [:inserted_at, :updated_at])
     |> validate_required([
       :geoname_id,
       :locale_code,
@@ -63,7 +65,7 @@ defmodule GeoIpServer.Geolite2City.Location do
     ])
     |> validate_length(:locale_code, is: 2)
     |> validate_length(:continent_code, is: 2)
-    |> validate_length(:continent_code, max: 255)
+    |> validate_length(:continent_name, max: 255)
     |> validate_length(:country_iso_code, is: 2)
     |> validate_length(:subdivision_1_iso_code, max: 3)
     |> validate_length(:subdivision_1_name, max: 255)
@@ -75,48 +77,21 @@ defmodule GeoIpServer.Geolite2City.Location do
   @doc """
   Converts a row from the CSV file to a Location changeset.
   """
-  def convert_row_to_changeset(row, now) do
-    case row do
-      [
-        geoname_id,
-        locale_code,
-        continent_code,
-        continent_name,
-        country_iso_code,
-        country_name,
-        subdivision_1_iso_code,
-        subdivision_1_name,
-        subdivision_2_iso_code,
-        subdivision_2_name,
-        city_name,
-        metro_code,
-        time_zone,
-        is_in_european_union
-      ] ->
-        changeset(%__MODULE__{}, %{
-          geoname_id: geoname_id,
-          locale_code: locale_code,
-          continent_code: continent_code,
-          continent_name: continent_name,
-          country_iso_code: country_iso_code,
-          country_name: country_name,
-          subdivision_1_iso_code: subdivision_1_iso_code,
-          subdivision_1_name: subdivision_1_name,
-          subdivision_2_iso_code: subdivision_2_iso_code,
-          subdivision_2_name: subdivision_2_name,
-          city_name: city_name,
-          metro_code: metro_code,
-          time_zone: time_zone,
-          is_in_european_union: is_in_european_union,
-          inserted_at: now,
-          updated_at: now
-        })
+  def convert_row_to_changeset(row, now) when length(row) == @column_count do
+    attrs =
+      @columns
+      |> Enum.zip(row)
+      |> Map.new()
+      |> Map.merge(%{inserted_at: now, updated_at: now})
 
-      _ ->
-        Logger.info("invalid row format: #{inspect(row)}")
+    changeset(%__MODULE__{}, attrs)
+  end
 
-        changeset(%__MODULE__{}, %{})
-        |> Ecto.Changeset.add_error(:msg, "invalid row format")
-    end
+  def convert_row_to_changeset(row, _now) do
+    Logger.info("invalid row format: #{inspect(row)}")
+
+    %__MODULE__{}
+    |> changeset(%{})
+    |> add_error(:msg, "invalid row format")
   end
 end
