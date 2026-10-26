@@ -10,7 +10,6 @@ defmodule GeoIpServer.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      preferred_cli_env: ["test.ci": :test],
       consolidated_protocols: Mix.env() != :test,
       dialyzer: [
         plt_add_apps: [:mix],
@@ -76,8 +75,7 @@ defmodule GeoIpServer.MixProject do
         "ecto.migrate"
       ],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.drop", "ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "test.ci": ["ecto.drop", "ecto.create --quiet", "ecto.migrate --quiet", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
 end

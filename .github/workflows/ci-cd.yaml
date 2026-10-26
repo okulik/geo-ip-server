@@ -111,7 +111,7 @@ jobs:
         run: mix ecto.setup
       -
         name: Run tests
-        run: mix test.ci
+        run: mix test
 
   deploy:
     name: Deploy app
