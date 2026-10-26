@@ -221,45 +221,30 @@ defmodule GeoIpServer.Geolite2City do
   """
   def import_geolite_files!(tmp_dir) do
     # Get the full paths to the downloaded files.
-    {geolite_sha256_path} =
-      Path.join([tmp_dir, "*.zip.sha256"])
-      |> Path.wildcard()
-      |> List.to_tuple()
-
-    {geolite_zip_path} =
-      Path.join([tmp_dir, "*.zip"])
-      |> Path.wildcard()
-      |> List.to_tuple()
+    [sha256_path] = Path.wildcard(Path.join(tmp_dir, "*.zip.sha256"))
+    [zip_path] = Path.wildcard(Path.join(tmp_dir, "*.zip"))
 
     # Validate the sha256 of the downloaded geoip zip file.
-    import_sha256 = validate_sha256!(geolite_sha256_path, geolite_zip_path)
+    import_sha256 = validate_sha256!(sha256_path, zip_path)
 
-    # Extracted basename of the zip file without the extension (e.g. GeoLite2-City-CSV_20232310).
-    zip_folder = Path.basename(Path.basename(geolite_zip_path), ".zip")
-
-    # Extract only required files from the zip file.
-    file_list =
-      case :zip.unzip(String.to_charlist(geolite_zip_path), [
-             {:file_list, unzip_file_list(zip_folder)},
-             {:cwd, String.to_charlist(tmp_dir)}
-           ]) do
-        {:ok, file_list} ->
-          file_list
-
-        _ ->
-          raise "failed to unzip #{geolite_zip_path}"
-      end
+    # Basename of the zip file without the extension (e.g. GeoLite2-City-CSV_20232310).
+    zip_folder = Path.basename(zip_path, ".zip")
 
     # Extract the timestamp from the zip folder name (e.g. 20232310).
     @zip_folder_prefix <> ts = zip_folder
 
-    file_list
-    |> Enum.map(fn file_name -> Path.basename(file_name) end)
-    |> Enum.map(fn file_name ->
-      import_csv_file!(tmp_dir, zip_folder, file_name,
-        sha: import_sha256,
-        ts: ts
-      )
+    # Extract only required files from the zip file.
+    file_list =
+      case :zip.unzip(to_charlist(zip_path),
+             file_list: unzip_file_list(zip_folder),
+             cwd: to_charlist(tmp_dir)
+           ) do
+        {:ok, file_list} -> file_list
+        {:error, reason} -> raise "failed to unzip #{zip_path}: #{inspect(reason)}"
+      end
+
+    Enum.map(file_list, fn file ->
+      import_csv_file!(tmp_dir, zip_folder, Path.basename(file), sha: import_sha256, ts: ts)
     end)
   end
 
@@ -280,55 +265,45 @@ defmodule GeoIpServer.Geolite2City do
           running_time: 12
         }
   """
-  def import_csv_file!(temp_dir, zip_folder, csv, sha: import_sha256, ts: ts) do
+  def import_csv_file!(temp_dir, zip_folder, csv, opts) do
     Path.join([temp_dir, zip_folder, csv])
     |> File.stream!()
-    |> import_from_stream(csv, sha: import_sha256, ts: ts)
+    |> import_from_stream(csv, opts)
   end
 
-  def import_from_stream(file_stream, csv, sha: import_sha256, ts: ts) do
-    stats_table = :ets.new(:csv_import_stats, [:set, :private])
-
-    try do
-      :ets.insert(stats_table, {:success_count, 0})
-      :ets.insert(stats_table, {:error_count, 0})
-
-      import_with_tx(file_stream, stats_table, csv, sha: import_sha256, ts: ts)
-    after
-      :ets.delete(stats_table)
-    end
-  end
-
-  defp import_with_tx(file_stream, stats_table, csv, sha: import_sha256, ts: ts) do
+  def import_from_stream(file_stream, csv, opts) do
+    import_sha256 = Keyword.fetch!(opts, :sha)
+    ts = Keyword.fetch!(opts, :ts)
+    schema = schema_for(csv)
     t0 = System.monotonic_time(:millisecond)
 
-    res =
+    {:ok, geolite2_import} =
       Repo.transaction(
         fn ->
           now = DateTime.utc_now()
 
-          file_stream
-          |> CSV.parse_stream(skip_headers: true)
-          |> Stream.chunk_every(@csv_batch_size)
-          |> Stream.each(fn chunk ->
-            chunk
-            |> Enum.map(&convert_row_to_changeset(&1, now, csv))
-            |> write_changesets_to_db(csv)
-            |> update_stats(stats_table)
-          end)
-          |> Stream.run()
+          {success_count, error_count} =
+            file_stream
+            |> CSV.parse_stream(skip_headers: true)
+            |> Stream.chunk_every(@csv_batch_size)
+            |> Enum.reduce({0, 0}, fn rows, {success_count, error_count} ->
+              {valid, invalid} =
+                rows
+                |> Enum.map(&schema.convert_row_to_changeset(&1, now))
+                |> Enum.split_with(& &1.valid?)
 
-          t1 = System.monotonic_time(:millisecond)
+              Enum.each(invalid, &log_invalid_changeset/1)
+              insert_all(schema, Enum.map(valid, & &1.changes))
 
-          success_count = elem(hd(:ets.lookup(stats_table, :success_count)), 1)
-          error_count = elem(hd(:ets.lookup(stats_table, :error_count)), 1)
+              {success_count + length(valid), error_count + length(invalid)}
+            end)
+
+          running_time = System.monotonic_time(:millisecond) - t0
 
           :telemetry.execute(
             [:geo_ip_server, :csv_import, :duration],
-            %{took: t1 - t0},
-            %{
-              csv: csv
-            }
+            %{took: running_time},
+            %{csv: csv}
           )
 
           DataImport.create_geolite2_import!(%{
@@ -336,7 +311,7 @@ defmodule GeoIpServer.Geolite2City do
             import_sha256: import_sha256,
             success_count: success_count,
             error_count: error_count,
-            running_time: t1 - t0,
+            running_time: running_time,
             created_at: now,
             timestamp: ts
           })
@@ -344,40 +319,7 @@ defmodule GeoIpServer.Geolite2City do
         timeout: :infinity
       )
 
-    case res do
-      {:ok, val} -> val
-      {:error, reason} -> raise "error importing CSV: #{inspect(reason)}"
-    end
-  end
-
-  defp write_changesets_to_db(changesets, csv) do
-    {ok_changesets, changesets} =
-      Enum.reduce(changesets, {[], []}, fn cs, {oks, all} ->
-        if cs.valid? do
-          {[cs.changes | oks], [cs | all]}
-        else
-          log_invalid_changeset(cs, csv)
-          {oks, [cs | all]}
-        end
-      end)
-
-    insert_to_db(ok_changesets, csv)
-
-    changesets
-  end
-
-  defp update_stats(changesets, stats_table) do
-    {success_count, error_count} =
-      Enum.reduce(changesets, {0, 0}, fn cs, {s, e} ->
-        if cs.valid? do
-          {s + 1, e}
-        else
-          {s, e + 1}
-        end
-      end)
-
-    :ets.update_counter(stats_table, :success_count, success_count)
-    :ets.update_counter(stats_table, :error_count, error_count)
+    geolite2_import
   end
 
   defp validate_sha256!(geolite_sha256_path, geolite_zip_path) do
@@ -395,56 +337,28 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   defp unzip_file_list(folder_prefix) do
-    @unzip_file_list
-    |> Enum.map(fn file_name -> String.to_charlist(Path.join([folder_prefix, file_name])) end)
+    Enum.map(@unzip_file_list, &to_charlist(Path.join(folder_prefix, &1)))
   end
 
-  defp log_invalid_changeset(changeset, csv) do
-    changes =
-      GeoIpServer.Utils.struct_from_map(
-        changeset.changes,
-        to: file_name_to_struct(csv)
-      )
+  defp log_invalid_changeset(changeset) do
+    changes = GeoIpServer.Utils.struct_from_map(changeset.changes, to: changeset.data)
 
     errors =
-      Enum.map_join(
-        changeset.errors,
-        ", ",
-        fn {key, value} -> "#{key} #{elem(value, 0)}" end
-      )
+      Enum.map_join(changeset.errors, ", ", fn {key, {message, _opts}} -> "#{key} #{message}" end)
 
     Logger.info("failed row validations, changes: [#{changes}], errors: [#{errors}]")
   end
 
-  defp convert_row_to_changeset(row, now, csv) when csv == @locations,
-    do: Location.convert_row_to_changeset(row, now)
+  defp schema_for(@locations), do: Location
+  defp schema_for(@blocks_ipv4), do: BlockIpv4
+  defp schema_for(@blocks_ipv6), do: BlockIpv6
 
-  defp convert_row_to_changeset(row, now, csv) when csv == @blocks_ipv4,
-    do: BlockIpv4.convert_row_to_changeset(row, now)
-
-  defp convert_row_to_changeset(row, now, csv) when csv == @blocks_ipv6,
-    do: BlockIpv6.convert_row_to_changeset(row, now)
-
-  defp insert_to_db(changesets, csv) when csv == @locations,
-    do:
-      Repo.insert_all({"geolite2_city_locations", Location}, changesets,
-        on_conflict: :replace_all,
-        conflict_target: [:geoname_id]
-      )
-
-  defp insert_to_db(changesets, csv) when csv == @blocks_ipv4,
-    do:
-      Repo.insert_all({"geolite2_city_blocks_ipv4", BlockIpv4}, changesets,
-        on_conflict: :replace_all,
-        conflict_target: [:network]
-      )
-
-  defp insert_to_db(changesets, csv) when csv == @blocks_ipv6,
-    do:
-      Repo.insert_all({"geolite2_city_blocks_ipv6", BlockIpv6}, changesets,
-        on_conflict: :replace_all,
-        conflict_target: [:network]
-      )
+  defp insert_all(schema, entries) do
+    Repo.insert_all(schema, entries,
+      on_conflict: :replace_all,
+      conflict_target: schema.__schema__(:primary_key)
+    )
+  end
 
   defp locations_query(address) do
     block_schema = if tuple_size(address) == 4, do: BlockIpv4, else: BlockIpv6
@@ -473,8 +387,4 @@ defmodule GeoIpServer.Geolite2City do
       nil -> {:error, :not_found}
     end
   end
-
-  defp file_name_to_struct(csv) when csv == @locations, do: %Location{}
-  defp file_name_to_struct(csv) when csv == @blocks_ipv4, do: %BlockIpv4{}
-  defp file_name_to_struct(csv) when csv == @blocks_ipv6, do: %BlockIpv6{}
 end

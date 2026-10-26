@@ -11,10 +11,16 @@ defmodule GeoIpServer.GeoDataTest.ImportFromCSV do
         Geolite2City.import_csv_file!(
           "/tmp",
           "rand123",
-          "no-such-file.csv",
+          "GeoLite2-City-Locations-en.csv",
           sha: "some-sha",
           ts: "20231024"
         )
+      end
+    end
+
+    test "import_from_stream/3 with an unknown CSV file name" do
+      assert_raise FunctionClauseError, fn ->
+        Geolite2City.import_from_stream([], "unknown.csv", sha: "some-sha", ts: "20231024")
       end
     end
 
