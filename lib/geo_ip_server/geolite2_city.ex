@@ -123,7 +123,7 @@ defmodule GeoIpServer.Geolite2City do
   """
   def get_location(geoname_id) do
     case Repo.get(Location, geoname_id) do
-      loc = %Location{} -> {:ok, loc}
+      %Location{} = location -> {:ok, location}
       nil -> {:error, :not_found}
     end
   end
