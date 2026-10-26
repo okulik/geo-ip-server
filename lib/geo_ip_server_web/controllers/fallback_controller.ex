@@ -14,6 +14,14 @@ defmodule GeoIpServerWeb.FallbackController do
     |> render(:error, changeset: changeset)
   end
 
+  # Handle malformed IP addresses.
+  def call(conn, {:error, :invalid_ip}) do
+    conn
+    |> put_status(:bad_request)
+    |> put_view(json: GeoIpServerWeb.ErrorJSON)
+    |> render(:"400")
+  end
+
   # Handle resources that cannot be found.
   def call(conn, {:error, :not_found}) do
     conn

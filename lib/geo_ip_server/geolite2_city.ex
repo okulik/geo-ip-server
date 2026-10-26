@@ -175,12 +175,13 @@ defmodule GeoIpServer.Geolite2City do
 
   """
   def get_locations_for_ip(ip_address) do
-    case :inet.parse_strict_address(to_charlist(ip_address)) do
-      {:ok, address} ->
-        Cache.fetch_or_store(ip_address, fn -> {:ok, locations_query(address)} end)
-
-      {:error, :einval} ->
-        {:error, :invalid_ip}
+    with {:ok, address} <- :inet.parse_strict_address(to_charlist(ip_address)),
+         {:ok, [_ | _]} = ok <-
+           Cache.fetch_or_store(ip_address, fn -> {:ok, locations_query(address)} end) do
+      ok
+    else
+      {:ok, []} -> {:error, :not_found}
+      {:error, :einval} -> {:error, :invalid_ip}
     end
   end
 

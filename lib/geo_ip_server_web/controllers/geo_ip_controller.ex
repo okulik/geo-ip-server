@@ -22,40 +22,9 @@ defmodule GeoIpServerWeb.GeoIpController do
       $ curl "http://localhost:4000/geoips/10.0.0.1"
       {"error":"Not Found"}
   """
-  def show(conn, _params) do
-    with {:ok, ip_address} <- validate_params(conn),
-         {:ok, records} when records != [] <- Geolite2City.get_locations_for_ip(ip_address) do
-      conn
-      |> put_resp_header("content-type", "application/json; charset=utf-8")
-      |> send_resp(200, Jason.encode!(%{records: records}))
-    else
-      {:ok, []} ->
-        conn
-        |> put_status(:not_found)
-        |> put_view(json: GeoIpServerWeb.ErrorJSON)
-        |> render(:"404")
-
-      {:error, _} ->
-        conn
-        |> put_status(:bad_request)
-        |> put_view(json: GeoIpServerWeb.ErrorJSON)
-        |> render(:"400")
-
-      {:error, code, message} ->
-        conn
-        |> put_status(code)
-        |> put_view(json: GeoIpServerWeb.ErrorJSON)
-        |> render(:"#{code}", message: message)
-    end
-  end
-
-  defp validate_params(conn) do
-    case Map.fetch(conn.params, "id") do
-      {:ok, id} ->
-        {:ok, id}
-
-      :error ->
-        {:error, 400, "missing IP address"}
+  def show(conn, %{"id" => ip_address}) do
+    with {:ok, records} <- Geolite2City.get_locations_for_ip(ip_address) do
+      json(conn, %{records: records})
     end
   end
 end

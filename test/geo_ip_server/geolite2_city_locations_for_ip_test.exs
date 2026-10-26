@@ -54,11 +54,11 @@ defmodule GeoIpServer.GeoDataTest.LocationsForIp do
       assert rec.is_in_european_union == loc.is_in_european_union
     end
 
-    test "get_locations_for_ip/1 returns [] when record is missing" do
-      assert Geolite2City.get_locations_for_ip("1.2.3.4") == {:ok, []}
+    test "get_locations_for_ip/1 returns error when record is missing" do
+      assert Geolite2City.get_locations_for_ip("1.2.3.4") == {:error, :not_found}
     end
 
-    test "get_locations_for_ip/1 returns [] when ip address is invalid" do
+    test "get_locations_for_ip/1 returns error when ip address is invalid" do
       assert Geolite2City.get_locations_for_ip("bad-addr") == {:error, :invalid_ip}
     end
   end

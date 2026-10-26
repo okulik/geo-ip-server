@@ -7,8 +7,6 @@ defmodule GeoIpServerWeb.AdminCacheController do
 
   alias GeoIpServer.Cache
 
-  action_fallback(GeoIpServerWeb.FallbackController)
-
   @doc """
   The delete method purges the whole cache.
 
@@ -17,10 +15,6 @@ defmodule GeoIpServerWeb.AdminCacheController do
       {"items_deleted": 100}
   """
   def delete(conn, _) do
-    items_deleted = Cache.delete_all!()
-
-    conn
-    |> put_resp_header("content-type", "application/json; charset=utf-8")
-    |> send_resp(200, Jason.encode!(%{items_deleted: items_deleted}))
+    json(conn, %{items_deleted: Cache.delete_all!()})
   end
 end
