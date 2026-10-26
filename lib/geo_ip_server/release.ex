@@ -56,10 +56,10 @@ defmodule GeoIpServer.Release do
     port = String.to_integer(System.get_env("PORT") || "4000")
 
     # Delete the cache after a successful download.
-    :hackney.delete(~c"http://localhost:#{port}/admin/cache", [],
+    :hackney.delete("http://localhost:#{port}/admin/cache", [], "",
       basic_auth: {
-        to_charlist(System.get_env("ADMIN_BASIC_AUTH_USERNAME")),
-        to_charlist(System.get_env("ADMIN_BASIC_AUTH_PASSWORD"))
+        System.get_env("ADMIN_BASIC_AUTH_USERNAME"),
+        System.get_env("ADMIN_BASIC_AUTH_PASSWORD")
       }
     )
   end
