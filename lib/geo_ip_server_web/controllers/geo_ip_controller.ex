@@ -7,7 +7,7 @@ defmodule GeoIpServerWeb.GeoIpController do
 
   alias GeoIpServer.Geolite2City
 
-  action_fallback(GeoIpServerWeb.FallbackController)
+  action_fallback GeoIpServerWeb.FallbackController
 
   @doc """
   The show method returns geolocation data for a provided ip address.

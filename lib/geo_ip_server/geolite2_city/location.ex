@@ -31,19 +31,19 @@ defmodule GeoIpServer.Geolite2City.Location do
   @derive {Jason.Encoder, except: [:__meta__]}
   @primary_key {:geoname_id, :integer, []}
   schema "geolite2_city_locations" do
-    field(:locale_code, :string)
-    field(:continent_code, :string)
-    field(:continent_name, :string)
-    field(:country_iso_code, :string)
-    field(:country_name, :string)
-    field(:subdivision_1_iso_code, :string)
-    field(:subdivision_1_name, :string)
-    field(:subdivision_2_iso_code, :string)
-    field(:subdivision_2_name, :string)
-    field(:city_name, :string)
-    field(:metro_code, :integer)
-    field(:time_zone, :string)
-    field(:is_in_european_union, :boolean)
+    field :locale_code, :string
+    field :continent_code, :string
+    field :continent_name, :string
+    field :country_iso_code, :string
+    field :country_name, :string
+    field :subdivision_1_iso_code, :string
+    field :subdivision_1_name, :string
+    field :subdivision_2_iso_code, :string
+    field :subdivision_2_name, :string
+    field :city_name, :string
+    field :metro_code, :integer
+    field :time_zone, :string
+    field :is_in_european_union, :boolean
     timestamps(type: :utc_datetime)
   end
 

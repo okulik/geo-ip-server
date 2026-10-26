@@ -365,11 +365,10 @@ defmodule GeoIpServer.Geolite2City do
     block_schema = if tuple_size(address) == 4, do: BlockIpv4, else: BlockIpv6
 
     Repo.all(
-      from(l in Location,
+      from l in Location,
         join: b in ^block_schema,
         on: b.geoname_id == l.geoname_id,
         where: fragment("? >>= ?", b.network, ^%Postgrex.INET{address: address})
-      )
     )
   end
 
@@ -377,10 +376,9 @@ defmodule GeoIpServer.Geolite2City do
     with {:ok, network} <- EctoNetwork.CIDR.cast(cidr),
          %{} = block <-
            Repo.one(
-             from(b in schema,
+             from b in schema,
                where: fragment("? >>= ?", b.network, ^network),
                limit: 1
-             )
            ) do
       {:ok, block}
     else

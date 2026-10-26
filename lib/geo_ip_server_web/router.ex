@@ -2,25 +2,25 @@ defmodule GeoIpServerWeb.Router do
   use GeoIpServerWeb, :router
 
   pipeline :api do
-    plug(:basic_auth, GeoIpServerWeb.ApiAuthentication)
-    plug(:accepts, ["json"])
+    plug :basic_auth, GeoIpServerWeb.ApiAuthentication
+    plug :accepts, ["json"]
   end
 
   pipeline :admin do
-    plug(:basic_auth, GeoIpServerWeb.AdminAuthentication)
-    plug(:accepts, ["json"])
+    plug :basic_auth, GeoIpServerWeb.AdminAuthentication
+    plug :accepts, ["json"]
   end
 
   scope "/", GeoIpServerWeb do
-    pipe_through(:api)
+    pipe_through :api
 
-    get("/geoips/:id", GeoIpController, :show)
+    get "/geoips/:id", GeoIpController, :show
   end
 
   scope "/admin", GeoIpServerWeb do
-    pipe_through(:admin)
+    pipe_through :admin
 
-    delete("/cache", AdminCacheController, :delete)
+    delete "/cache", AdminCacheController, :delete
   end
 
   defp basic_auth(conn, config_key) do

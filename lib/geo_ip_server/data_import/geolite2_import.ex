@@ -8,14 +8,14 @@ defmodule GeoIpServer.DataImport.Geolite2Import do
   """
 
   schema "geolite2_imports" do
-    field(:import_file, :string)
-    field(:timestamp, :string)
-    field(:import_sha256, :string)
-    field(:success_count, :integer)
-    field(:error_count, :integer)
-    field(:last_error, :string)
-    field(:running_time, :integer)
-    field(:created_at, :utc_datetime)
+    field :import_file, :string
+    field :timestamp, :string
+    field :import_sha256, :string
+    field :success_count, :integer
+    field :error_count, :integer
+    field :last_error, :string
+    field :running_time, :integer
+    field :created_at, :utc_datetime
   end
 
   @doc """
