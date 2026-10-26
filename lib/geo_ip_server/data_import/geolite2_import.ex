@@ -47,19 +47,3 @@ defmodule GeoIpServer.DataImport.Geolite2Import do
     |> validate_number(:running_time, greater_than_or_equal_to: 0)
   end
 end
-
-defimpl String.Chars, for: GeoIpServer.DataImport.Geolite2Import do
-  def to_string(%GeoIpServer.DataImport.Geolite2Import{} = geolite2_import) do
-    [
-      "import_file: #{geolite2_import.import_file}",
-      "timestamp: #{geolite2_import.timestamp}",
-      "import_sha256: #{geolite2_import.import_sha256}",
-      "success_count: #{geolite2_import.success_count}",
-      "error_count: #{geolite2_import.error_count}",
-      "last_error: #{geolite2_import.last_error}",
-      "running_time: #{geolite2_import.running_time}",
-      "created_at: #{geolite2_import.created_at}"
-    ]
-    |> Enum.join(", ")
-  end
-end

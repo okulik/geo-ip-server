@@ -342,12 +342,12 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   defp log_invalid_changeset(changeset) do
-    changes = GeoIpServer.Utils.struct_from_map(changeset.changes, to: changeset.data)
-
     errors =
       Enum.map_join(changeset.errors, ", ", fn {key, {message, _opts}} -> "#{key} #{message}" end)
 
-    Logger.info("failed row validations, changes: [#{changes}], errors: [#{errors}]")
+    Logger.info(
+      "failed row validations, changes: #{inspect(changeset.changes)}, errors: [#{errors}]"
+    )
   end
 
   defp schema_for(@locations), do: Location

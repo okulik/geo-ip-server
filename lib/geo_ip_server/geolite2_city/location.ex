@@ -120,32 +120,3 @@ defmodule GeoIpServer.Geolite2City.Location do
     end
   end
 end
-
-defimpl String.Chars, for: GeoIpServer.Geolite2City.Location do
-  import GeoIpServer.Utils, only: [val_for_log: 1]
-
-  @doc """
-  Converts a Location struct to a string.
-  """
-  def to_string(%GeoIpServer.Geolite2City.Location{} = location) do
-    [
-      "geoname_id: #{val_for_log(location.geoname_id)}",
-      "locale_code: #{val_for_log(location.locale_code)}",
-      "continent_code: #{val_for_log(location.continent_code)}",
-      "continent_name: #{val_for_log(location.continent_name)}",
-      "country_iso_code: #{val_for_log(location.country_iso_code)}",
-      "country_name: #{val_for_log(location.country_name)}",
-      "subdivision_1_iso_code: #{val_for_log(location.subdivision_1_iso_code)}",
-      "subdivision_1_name: #{val_for_log(location.subdivision_1_name)}",
-      "subdivision_2_iso_code: #{val_for_log(location.subdivision_2_iso_code)}",
-      "subdivision_2_name: #{val_for_log(location.subdivision_2_name)}",
-      "city_name: #{val_for_log(location.city_name)}",
-      "metro_code: #{val_for_log(location.metro_code)}",
-      "time_zone: #{val_for_log(location.time_zone)}",
-      "is_in_european_union: #{val_for_log(location.is_in_european_union)}",
-      "inserted_at: #{val_for_log(location.inserted_at)}",
-      "updated_at: #{val_for_log(location.updated_at)}"
-    ]
-    |> Enum.join(", ")
-  end
-end

@@ -103,29 +103,3 @@ defmodule GeoIpServer.Geolite2City.BlockIpv4 do
     end
   end
 end
-
-defimpl String.Chars, for: GeoIpServer.Geolite2City.BlockIpv4 do
-  import GeoIpServer.Utils, only: [val_for_log: 1]
-
-  @doc """
-  Converts a BlockIpv4 struct to a string.
-  """
-  def to_string(%GeoIpServer.Geolite2City.BlockIpv4{} = block_ipv4) do
-    [
-      "network: #{val_for_log(block_ipv4.network)}",
-      "geoname_id: #{val_for_log(block_ipv4.geoname_id)}",
-      "registered_country_geoname_id: #{val_for_log(block_ipv4.registered_country_geoname_id)}",
-      "represented_country_geoname_id: #{val_for_log(block_ipv4.represented_country_geoname_id)}",
-      "is_anonymous_proxy: #{val_for_log(block_ipv4.is_anonymous_proxy)}",
-      "is_satellite_provider: #{val_for_log(block_ipv4.is_satellite_provider)}",
-      "postal_code: #{val_for_log(block_ipv4.postal_code)}",
-      "latitude: #{val_for_log(block_ipv4.latitude)}",
-      "longitude: #{val_for_log(block_ipv4.longitude)}",
-      "accuracy_radius: #{val_for_log(block_ipv4.accuracy_radius)}",
-      "is_anycast: #{val_for_log(block_ipv4.is_anycast)}",
-      "inserted_at: #{val_for_log(block_ipv4.inserted_at)}",
-      "updated_at: #{val_for_log(block_ipv4.updated_at)}"
-    ]
-    |> Enum.join(", ")
-  end
-end
