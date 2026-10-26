@@ -46,6 +46,7 @@ defmodule GeoIpServer.MixProject do
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.4"},
       {:nebulex, "~> 3.0"},
+      {:nebulex_local, "~> 3.0"},
       {:nimble_csv, "~> 1.1"},
       {:observer_cli, "~> 2.0"},
       {:phoenix, "~> 1.7"},

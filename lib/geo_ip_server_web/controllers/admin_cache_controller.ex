@@ -17,7 +17,7 @@ defmodule GeoIpServerWeb.AdminCacheController do
       {"items_deleted": 100}
   """
   def delete(conn, _) do
-    items_deleted = Cache.delete_all()
+    items_deleted = Cache.delete_all!()
 
     conn
     |> put_resp_header("content-type", "application/json; charset=utf-8")

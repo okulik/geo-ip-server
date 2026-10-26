@@ -446,10 +446,7 @@ defmodule GeoIpServer.Geolite2City do
   defp get_locations_for_ip(ip_address, type: type) do
     case parse_ip_address(ip_address, type: type) do
       {:ok, _} ->
-        {_, val} =
-          Cache.fetch(ip_address, fn ipadr -> run_locations_query(ipadr, type: type) end)
-
-        {:ok, val}
+        Cache.fetch_or_store(ip_address, fn -> run_locations_query(ip_address, type: type) end)
 
       {:error, :einval} ->
         {:error, :invalid_ip}
@@ -476,7 +473,7 @@ defmodule GeoIpServer.Geolite2City do
           []
       end
 
-    {:commit, ret}
+    {:ok, ret}
   end
 
   defp get_block_ip(cidr, type: type) do

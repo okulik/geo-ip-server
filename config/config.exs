@@ -6,8 +6,7 @@ config :geo_ip_server, GeoIpServer.Cache,
   gc_interval: :timer.hours(2),
   max_size: 100_000,
   allocated_memory: 104_857_600,
-  gc_cleanup_min_timeout: :timer.seconds(10),
-  gc_cleanup_max_timeout: :timer.minutes(10)
+  gc_memory_check_interval: :timer.seconds(10)
 
 config :geo_ip_server,
   ecto_repos: [GeoIpServer.Repo]
