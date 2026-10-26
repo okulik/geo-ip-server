@@ -454,8 +454,8 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   defp run_locations_query(ip_address, type: type) do
-    query =
-      Repo.query("""
+    res =
+      Repo.query!("""
       SELECT l.*
       FROM geolite2_city_blocks_#{table_suffix(type)} AS r
       JOIN geolite2_city_locations AS l
@@ -463,35 +463,27 @@ defmodule GeoIpServer.Geolite2City do
       WHERE r.network >>= '#{ip_address}'
       """)
 
-    ret =
-      case query do
-        {:ok, res} ->
-          map_from_sql_query_result(res)
-
-        {:error, msg} ->
-          Logger.error("SQL query failed: #{msg}")
-          []
-      end
-
-    {:ok, ret}
+    {:ok, map_from_sql_query_result(res)}
   end
 
   defp get_block_ip(cidr, type: type) do
-    with {:ok, _} <- EctoNetwork.CIDR.cast(cidr),
-         {:ok, res} <-
-           Repo.query(
-             "SELECT r.* " <>
-               "FROM geolite2_city_blocks_#{table_suffix(type)} AS r " <>
-               "WHERE r.network >>= '#{cidr}'" <>
-               "LIMIT 1"
-           ) do
-      case struct_from_sql_query_result(res, to: get_module(type)) do
-        [] -> {:error, :not_found}
-        rec -> {:ok, hd(rec)}
-      end
-    else
-      :error -> {:error, :invalid_ip}
-      {:error, err} -> {:error, "SQL query failed: #{err}"}
+    case EctoNetwork.CIDR.cast(cidr) do
+      {:ok, _} ->
+        res =
+          Repo.query!(
+            "SELECT r.* " <>
+              "FROM geolite2_city_blocks_#{table_suffix(type)} AS r " <>
+              "WHERE r.network >>= '#{cidr}' " <>
+              "LIMIT 1"
+          )
+
+        case struct_from_sql_query_result(res, to: get_module(type)) do
+          [] -> {:error, :not_found}
+          [rec] -> {:ok, rec}
+        end
+
+      :error ->
+        {:error, :invalid_ip}
     end
   end
 
