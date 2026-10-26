@@ -40,16 +40,9 @@ defmodule GeoIpServer.Release do
     stats = GeoIpServer.Geolite2City.import_geolite_files!(tmp_dir)
 
     # Push metrics to the Pushgateway (production only).
-    cfg = Application.get_env(:geo_ip_server, GeoIpServer.Pushgateway)
-
-    if cfg != nil do
-      Enum.each(stats, fn stat ->
-        :hackney.post(
-          "http://localhost:#{cfg[:port]}/metrics/job/csv-import/instance/cronjob",
-          [],
-          print_csv_import_duration_event_metrics(stat.import_file, stat.running_time)
-        )
-      end)
+    case Application.fetch_env(@app, GeoIpServer.Pushgateway) do
+      {:ok, cfg} -> Enum.each(stats, &push_csv_import_duration_metrics(&1, cfg[:port]))
+      :error -> :ok
     end
 
     # Get the port from the PORT environment variable or default to 4000.
@@ -64,31 +57,31 @@ defmodule GeoIpServer.Release do
     )
   end
 
-  defp print_csv_import_duration_event_metrics(import_file, running_time) do
-    buckets = assign_csv_import_duration_event_buckets(running_time)
+  defp push_csv_import_duration_metrics(stat, port) do
+    :hackney.post(
+      "http://localhost:#{port}/metrics/job/csv-import/instance/cronjob",
+      [],
+      csv_import_duration_metrics(stat.import_file, stat.running_time)
+    )
+  end
 
-    text = """
+  defp csv_import_duration_metrics(import_file, running_time) do
+    buckets =
+      Enum.map(GeoIpServer.PromExPlugin.csv_import_duration_event_buckets(), fn bucket ->
+        {bucket, if(running_time <= bucket, do: 1, else: 0)}
+      end) ++ [{"+Inf", 1}]
+
+    [
+      """
       # HELP geo_ip_server_csv_import_duration The duration in milliseconds of CSV import.
       # TYPE geo_ip_server_csv_import_duration histogram
       geo_ip_server_csv_import_duration_sum{csv="#{import_file}"} #{running_time}
       geo_ip_server_csv_import_duration_count{csv="#{import_file}"} 1
-    """
-
-    Enum.reduce(buckets, text, fn {bucket, val}, acc ->
-      acc <>
-        """
-          geo_ip_server_csv_import_duration_bucket{csv="#{import_file}",le="#{bucket}"} #{val}
-        """
-    end)
-  end
-
-  defp assign_csv_import_duration_event_buckets(val) do
-    buckets = GeoIpServer.PromExPlugin.csv_import_duration_event_buckets()
-
-    Enum.reduce(buckets, %{}, fn bucket, acc ->
-      Map.put(acc, to_string(bucket), if(val <= bucket, do: 1, else: 0))
-    end)
-    |> Map.put("+Inf", 1)
+      """
+      | Enum.map(buckets, fn {le, count} ->
+          ~s|geo_ip_server_csv_import_duration_bucket{csv="#{import_file}",le="#{le}"} #{count}\n|
+        end)
+    ]
   end
 
   defp repos do
