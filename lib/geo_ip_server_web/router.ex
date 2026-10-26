@@ -2,23 +2,13 @@ defmodule GeoIpServerWeb.Router do
   use GeoIpServerWeb, :router
 
   pipeline :api do
-    plug(:api_auth)
+    plug(:basic_auth, GeoIpServerWeb.ApiAuthentication)
     plug(:accepts, ["json"])
-
-    plug(Plug.Parsers,
-      parsers: [:urlencoded, :json],
-      json_decoder: Jason
-    )
   end
 
   pipeline :admin do
-    plug(:admin_auth)
+    plug(:basic_auth, GeoIpServerWeb.AdminAuthentication)
     plug(:accepts, ["json"])
-
-    plug(Plug.Parsers,
-      parsers: [:urlencoded, :json],
-      json_decoder: Jason
-    )
   end
 
   scope "/", GeoIpServerWeb do
@@ -33,15 +23,12 @@ defmodule GeoIpServerWeb.Router do
     delete("/cache", AdminCacheController, :delete)
   end
 
-  defp api_auth(conn, _opts) do
-    username = Application.get_env(:geo_ip_server, GeoIpServerWeb.ApiAuthentication)[:username]
-    password = Application.get_env(:geo_ip_server, GeoIpServerWeb.ApiAuthentication)[:password]
-    Plug.BasicAuth.basic_auth(conn, username: username, password: password)
-  end
+  defp basic_auth(conn, config_key) do
+    config = Application.fetch_env!(:geo_ip_server, config_key)
 
-  defp admin_auth(conn, _opts) do
-    username = Application.get_env(:geo_ip_server, GeoIpServerWeb.AdminAuthentication)[:username]
-    password = Application.get_env(:geo_ip_server, GeoIpServerWeb.AdminAuthentication)[:password]
-    Plug.BasicAuth.basic_auth(conn, username: username, password: password)
+    Plug.BasicAuth.basic_auth(conn,
+      username: Keyword.fetch!(config, :username),
+      password: Keyword.fetch!(config, :password)
+    )
   end
 end
