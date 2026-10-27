@@ -38,9 +38,9 @@ defmodule GeoIpServer.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:sentry, "~> 11.0"},
-      {:hackney, "~>1.20"},
-      {:ecto_network, "~> 1.6.0"},
+      {:sentry, "~> 14.0"},
+      {:hackney, "~> 4.9"},
+      {:ecto_network, "~> 1.6"},
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.4"},
       {:nebulex, "~> 3.0"},
@@ -52,8 +52,8 @@ defmodule GeoIpServer.MixProject do
       {:plug_cowboy, "~> 2.5"},
       {:postgrex, ">= 0.0.0"},
       {:shards, "~> 1.1"},
-      {:telemetry_metrics, "~> 0.6"},
-      {:prom_ex, "~> 1.9"},
+      {:telemetry_metrics, "~> 1.0"},
+      {:prom_ex, "~> 1.12"},
       {:benchee, "~> 1.1", only: [:dev], runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
