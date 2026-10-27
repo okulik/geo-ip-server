@@ -113,6 +113,8 @@ jobs:
     name: Deploy app
     runs-on: ubuntu-latest
     needs: [test]
+    # Deploy only pushes to main, and only while the FLY_DEPLOY_ENABLED repository variable is "true".
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.FLY_DEPLOY_ENABLED == 'true'
     steps:
       - name: Checks out the code
         uses: actions/checkout@v7
