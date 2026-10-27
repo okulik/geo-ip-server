@@ -14,8 +14,8 @@ config :geo_ip_server, GeoIpServer.Repo,
 # For development, we disable any cache and enable
 # debugging and code reloading.
 config :geo_ip_server, GeoIpServerWeb.Endpoint,
-  # Binding to loopback ipv4 address prevents access from other machines.
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
+  # Binding to all interfaces allows access from other machines (e.g. Docker).
+  # Change to `ip: {127, 0, 0, 1}` to restrict access to this machine.
   http: [ip: {0, 0, 0, 0}, port: String.to_integer(System.get_env("PORT") || "4000")],
   check_origin: false,
   code_reloader: true,

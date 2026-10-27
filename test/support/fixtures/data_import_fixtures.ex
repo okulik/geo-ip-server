@@ -1,13 +1,13 @@
 defmodule GeoIpServer.DataImportFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `GeoIpServer.Geolite2City` context.
+  entities via the `GeoIpServer.DataImport` context.
   """
 
   alias GeoIpServer.DataImport
 
   @doc """
-  Generate a BlockIpv4 entity.
+  Generate a Geolite2Import entity.
   """
   def geolite2_import_fixture(attrs \\ %{}) do
     attrs

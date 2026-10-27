@@ -10,12 +10,10 @@ defmodule GeoIpServer.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      preferred_cli_env: ["test.ci": :test],
       consolidated_protocols: Mix.env() != :test,
       dialyzer: [
-        plt_add_apps: [:mix],
-        plt_file: {:no_warn, "priv/plts/project.plt"},
-        ignore_warnings: ".dialyzer_ignore.exs"
+        plt_add_apps: [:mix, :ex_unit],
+        plt_file: {:no_warn, "priv/plts/project.plt"}
       ]
     ]
   end
@@ -46,6 +44,7 @@ defmodule GeoIpServer.MixProject do
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.4"},
       {:nebulex, "~> 3.0"},
+      {:nebulex_local, "~> 3.0"},
       {:nimble_csv, "~> 1.1"},
       {:observer_cli, "~> 2.0"},
       {:phoenix, "~> 1.7"},
@@ -76,8 +75,7 @@ defmodule GeoIpServer.MixProject do
         "ecto.migrate"
       ],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.drop", "ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      "test.ci": ["ecto.drop", "ecto.create --quiet", "ecto.migrate --quiet", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
     ]
   end
 end

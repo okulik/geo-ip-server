@@ -3,10 +3,11 @@ defmodule GeoIpServer.Geolite2City do
   The Geolite2City context.
   """
 
-  import GeoIpServer.Utils, only: [struct_from_sql_query_result: 2, map_from_sql_query_result: 1]
+  import Ecto.Query, only: [from: 2]
 
   alias GeoIpServer.Cache
   alias GeoIpServer.DataImport
+  alias GeoIpServer.DataImport.Geolite2Import
   alias GeoIpServer.Geolite2City.{BlockIpv4, BlockIpv6, Location}
   alias GeoIpServer.Repo
   alias NimbleCSV.RFC4180, as: CSV
@@ -27,39 +28,41 @@ defmodule GeoIpServer.Geolite2City do
   @csv_batch_size 1000
 
   @doc """
-    Returns a {:ok, %BlockIpv4{}} tuple for a provided IPv4 CIDR formated
-    cidr argument. If the BlockIpv4 does not exist, an {:error, :not_found}
-    tuple is returned. If cidr is invalid, an {:error, :invalid_range}
-    tuple is returned.
+  Returns `{:ok, %BlockIpv4{}}` for the block containing the provided IPv4
+  CIDR. Returns `{:error, :not_found}` if no block contains it, or
+  `{:error, :invalid_ip}` if the CIDR is invalid.
 
-    ## Examples
+  ## Examples
 
-        iex> GeoIpServer.Geolite2City.get_block_ipv4("1.2.237.0/10")
-        {:ok, %GeoIpServer.Geolite2City.BlockIpv4{
-          network: #EctoNetwork.CIDR<...
-          geoname_id: 1151254,
-          ...
+      iex> GeoIpServer.Geolite2City.get_block_ipv4("1.2.237.0/10")
+      {:ok, %GeoIpServer.Geolite2City.BlockIpv4{
+        network: #EctoNetwork.CIDR<...
+        geoname_id: 1151254,
+        ...
 
-        iex> GeoIpServer.Geolite2City.get_block_ipv4("10.0.0.0/8")
-        {:error, :not_found}
+      iex> GeoIpServer.Geolite2City.get_block_ipv4("10.0.0.0/8")
+      {:error, :not_found}
 
-        iex> GeoIpServer.Geolite2City.get_block_ipv4("bad-cider")
-        {:error, :invalid_range}
+      iex> GeoIpServer.Geolite2City.get_block_ipv4("bad-cidr")
+      {:error, :invalid_ip}
 
   """
-  def get_block_ipv4(cidr), do: get_block_ip(cidr, type: :ip4)
+  @spec get_block_ipv4(String.t() | Postgrex.INET.t()) ::
+          {:ok, BlockIpv4.t()} | {:error, :not_found | :invalid_ip}
+  def get_block_ipv4(cidr), do: get_block(BlockIpv4, cidr)
 
   @doc """
-    Creates a BlockIpv4.
+  Creates a BlockIpv4.
 
-    ## Examples
+  ## Examples
 
-        iex> create_block_ipv4!(%{field: value})
-        %BlockIpv4{}
+      iex> create_block_ipv4!(%{field: value})
+      %BlockIpv4{}
 
-        iex> create_block_ipv4!(%{field: bad_value})
-        ** (Ecto.InvalidChangesetError)
+      iex> create_block_ipv4!(%{field: bad_value})
+      ** (Ecto.InvalidChangesetError)
   """
+  @spec create_block_ipv4!(map()) :: BlockIpv4.t()
   def create_block_ipv4!(attrs \\ %{}) do
     %BlockIpv4{}
     |> BlockIpv4.changeset(attrs)
@@ -67,38 +70,40 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   @doc """
-    Returns a {:ok, %BlockIpv6{}} tuple for a provided IPv6 CIDR formated
-    cidr argument. If the BlockIpv6 does not exist, an {:error, :not_found}
-    tuple is returned. If cidr is invalid, an {:error, :invalid_ip6r}
-    tuple is returned.
+  Returns `{:ok, %BlockIpv6{}}` for the block containing the provided IPv6
+  CIDR. Returns `{:error, :not_found}` if no block contains it, or
+  `{:error, :invalid_ip}` if the CIDR is invalid.
 
-    ## Examples
+  ## Examples
 
-        iex> GeoIpServer.Geolite2City.get_block_ipv6("1999:123:4567::/51")
-        {:ok, %GeoIpServer.Geolite2City.BlockIpv6{
-          network: #EctoNetwork.CIDR<...
-          geoname_id: 1151254,
-          ...
+      iex> GeoIpServer.Geolite2City.get_block_ipv6("1999:123:4567::/51")
+      {:ok, %GeoIpServer.Geolite2City.BlockIpv6{
+        network: #EctoNetwork.CIDR<...
+        geoname_id: 1151254,
+        ...
 
-        iex> GeoIpServer.Geolite2City.get_block_ipv6("fc00::/7")
-        {:error, :not_found}
+      iex> GeoIpServer.Geolite2City.get_block_ipv6("fc00::/7")
+      {:error, :not_found}
 
-        iex> GeoIpServer.Geolite2City.get_block_ipv6("bad-cider")
-        {:error, :invalid_range}
+      iex> GeoIpServer.Geolite2City.get_block_ipv6("bad-cidr")
+      {:error, :invalid_ip}
   """
-  def get_block_ipv6(cidr), do: get_block_ip(cidr, type: :ip6)
+  @spec get_block_ipv6(String.t() | Postgrex.INET.t()) ::
+          {:ok, BlockIpv6.t()} | {:error, :not_found | :invalid_ip}
+  def get_block_ipv6(cidr), do: get_block(BlockIpv6, cidr)
 
   @doc """
-    Creates a BlockIpv6.
+  Creates a BlockIpv6.
 
-    ## Examples
+  ## Examples
 
-        iex> create_block_ipv6!(%{network: "1999:123:4567::/51", geoname_id: 1151254, ...})
-        %BlockIpv6{}
+      iex> create_block_ipv6!(%{network: "1999:123:4567::/51", geoname_id: 1151254, ...})
+      %BlockIpv6{}
 
-        iex> create_block_ipv6!(%{})
-        ** (Ecto.InvalidChangesetError)
+      iex> create_block_ipv6!(%{})
+      ** (Ecto.InvalidChangesetError)
   """
+  @spec create_block_ipv6!(map()) :: BlockIpv6.t()
   def create_block_ipv6!(attrs \\ %{}) do
     %BlockIpv6{}
     |> BlockIpv6.changeset(attrs)
@@ -106,41 +111,43 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   @doc """
-    Returns a {:ok, %Location{}} tuple for a provided geoname_id. If the
-    Location does not exist, an {:error, :not_found} tuple is returned.
+  Returns `{:ok, %Location{}}` for the provided geoname_id, or
+  `{:error, :not_found}` if the Location does not exist.
 
-    ## Examples
+  ## Examples
 
-        iex> GeoIpServer.Geolite2City.get_location(1151254)
-        {:ok, %GeoIpServer.Geolite2City.Location{
-          geoname_id: 1151254,
-          locale_code: "en",
-          continent_code: "EU",
-          continent_name: "Europe",
-          country_iso_code: "HR",
-          ...
+      iex> GeoIpServer.Geolite2City.get_location(1151254)
+      {:ok, %GeoIpServer.Geolite2City.Location{
+        geoname_id: 1151254,
+        locale_code: "en",
+        continent_code: "EU",
+        continent_name: "Europe",
+        country_iso_code: "HR",
+        ...
 
-        iex> GeoIpServer.Geolite2City.get_location(9999999)
-        {:error, :not_found}
+      iex> GeoIpServer.Geolite2City.get_location(9999999)
+      {:error, :not_found}
   """
+  @spec get_location(integer()) :: {:ok, Location.t()} | {:error, :not_found}
   def get_location(geoname_id) do
     case Repo.get(Location, geoname_id) do
-      loc = %Location{} -> {:ok, loc}
+      %Location{} = location -> {:ok, location}
       nil -> {:error, :not_found}
     end
   end
 
   @doc """
-    Creates a Location.
+  Creates a Location.
 
-    ## Examples
+  ## Examples
 
-        iex> create_location!(%{geoname_id: 1151254, locale_code: "en", ...})
-        %Location{}
+      iex> create_location!(%{geoname_id: 1151254, locale_code: "en", ...})
+      %Location{}
 
-        iex> create_location!(%{})
-        ** (Ecto.InvalidChangesetError)
+      iex> create_location!(%{})
+      ** (Ecto.InvalidChangesetError)
   """
+  @spec create_location!(map()) :: Location.t()
   def create_location!(attrs \\ %{}) do
     %Location{}
     |> Location.changeset(attrs)
@@ -148,184 +155,175 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   @doc """
-    Returns geolocation data for a provided ip address. IP address can be provided
-    in either IPv4 or IPv6 formats and is searched accordingly as we store these
-    IP addresses in separate tables. If the ip address is not found in
-    either tables, {:error, :not_found} tuple is returned. If ip_address is invalid,
-    {:error, :invalid_ip} is returned.
+  Returns the locations for the provided IPv4 or IPv6 address, looked up in
+  the matching blocks table and cached. Returns `{:error, :not_found}` if no
+  block contains the address, or `{:error, :invalid_ip}` if it is invalid.
 
-    ## Examples
+  ## Examples
 
-        iex> GeoIpServer.Geolite2City.get_locations_for_ip("1.2.237.0")
-        {:ok,
-         [
-           %{
-             "city_name" => "Chiang Mai",
-             "continent_code" => "AS",
-             "continent_name" => "Asia",
-             ...
-           }
-         ]}
+      iex> GeoIpServer.Geolite2City.get_locations_for_ip("1.2.237.0")
+      {:ok,
+       [
+         %GeoIpServer.Geolite2City.Location{
+           city_name: "Chiang Mai",
+           continent_code: "AS",
+           continent_name: "Asia",
+           ...
+         }
+       ]}
 
-        iex> GeoIpServer.Geolite2City.get_locations_for_ip("10.0.0.0")
-        {:error, :not_found}
+      iex> GeoIpServer.Geolite2City.get_locations_for_ip("10.0.0.0")
+      {:error, :not_found}
 
-        iex> GeoIpServer.Geolite2City.get_locations_for_ip("bad-addr")
-        {:error, :invalid_ip}
+      iex> GeoIpServer.Geolite2City.get_locations_for_ip("bad-addr")
+      {:error, :invalid_ip}
 
   """
+  @spec get_locations_for_ip(String.t()) ::
+          {:ok, [Location.t(), ...]} | {:error, :not_found | :invalid_ip}
   def get_locations_for_ip(ip_address) do
-    case get_locations_for_ip(ip_address, type: :ip4) do
-      {:error, :invalid_ip} -> get_locations_for_ip(ip_address, type: :ip6)
-      ret -> ret
+    with {:ok, address} <- :inet.parse_strict_address(to_charlist(ip_address)),
+         {:ok, [_ | _]} = ok <-
+           Cache.fetch_or_store(ip_address, fn -> {:ok, locations_query(address)} end) do
+      ok
+    else
+      {:ok, []} -> {:error, :not_found}
+      {:error, :einval} -> {:error, :invalid_ip}
     end
   end
 
   @doc """
-    Validates the sha256 of the downloaded zip file, extracts the required
-    files from the zip file, and imports the extracted files into the database.
-    This function is typically called from a CRON job, or from a mix task.
-    Returns a list of Geolite2Import structs, one for each imported file.
-    Locations are imported first, followed by BlockIpv4, and then BlockIpv6.
-    Each file is saved to a separate table in the database.
+  Validates the sha256 of the downloaded zip file, extracts the required
+  files from the zip file, and imports the extracted files into the database.
+  This function is typically called from a CRON job, or from a mix task.
+  Returns a list of Geolite2Import structs, one for each imported file.
+  Locations are imported first, followed by BlockIpv4, and then BlockIpv6.
+  Each file is saved to a separate table in the database.
 
-    ## Examples
+  ## Examples
 
-        iex> import_geolite_files!("/tmp/geolite2-2024-06-04-18-01-00")
-        [
-          %Geolite2Import{
-            import_file: "GeoLite2-City-Locations-en.csv",
-            import_file_sha256: "abcd1234",
-            success_count: 10,
-            error_count: 0,
-            running_time: 12
-          },
-          %Geolite2Import{
-            import_file: "GeoLite2-City-Blocks-IPv4.csv",
-            import_file_sha256: "abcd9876",
-            success_count: 5,
-            error_count: 1,
-            running_time: 234
-          },
-          %Geolite2Import{
-            import_file: "GeoLite2-City-Blocks-IPv6.csv",
-            import_file_sha256: "zyxw4321",
-            success_count: 333,
-            error_count: 12,
-            running_time: 123
-          }
-        ]
+      iex> import_geolite_files!("/tmp/geolite2-2024-06-04-18-01-00")
+      [
+        %Geolite2Import{
+          import_file: "GeoLite2-City-Locations-en.csv",
+          import_sha256: "abcd1234",
+          success_count: 10,
+          error_count: 0,
+          running_time: 12
+        },
+        %Geolite2Import{
+          import_file: "GeoLite2-City-Blocks-IPv4.csv",
+          import_sha256: "abcd9876",
+          success_count: 5,
+          error_count: 1,
+          running_time: 234
+        },
+        %Geolite2Import{
+          import_file: "GeoLite2-City-Blocks-IPv6.csv",
+          import_sha256: "zyxw4321",
+          success_count: 333,
+          error_count: 12,
+          running_time: 123
+        }
+      ]
   """
+  @spec import_geolite_files!(Path.t()) :: [Geolite2Import.t()]
   def import_geolite_files!(tmp_dir) do
     # Get the full paths to the downloaded files.
-    {geolite_sha256_path} =
-      Path.join([tmp_dir, "*.zip.sha256"])
-      |> Path.wildcard()
-      |> List.to_tuple()
-
-    {geolite_zip_path} =
-      Path.join([tmp_dir, "*.zip"])
-      |> Path.wildcard()
-      |> List.to_tuple()
+    [sha256_path] = Path.wildcard(Path.join(tmp_dir, "*.zip.sha256"))
+    [zip_path] = Path.wildcard(Path.join(tmp_dir, "*.zip"))
 
     # Validate the sha256 of the downloaded geoip zip file.
-    import_sha256 = validate_sha256!(geolite_sha256_path, geolite_zip_path)
+    import_sha256 = validate_sha256!(sha256_path, zip_path)
 
-    # Extracted basename of the zip file without the extension (e.g. GeoLite2-City-CSV_20232310).
-    zip_folder = Path.basename(Path.basename(geolite_zip_path), ".zip")
-
-    # Extract only required files from the zip file.
-    file_list =
-      case :zip.unzip(String.to_charlist(geolite_zip_path), [
-             {:file_list, unzip_file_list(zip_folder)},
-             {:cwd, String.to_charlist(tmp_dir)}
-           ]) do
-        {:ok, file_list} ->
-          file_list
-
-        _ ->
-          raise "failed to unzip #{geolite_zip_path}"
-      end
+    # Basename of the zip file without the extension (e.g. GeoLite2-City-CSV_20232310).
+    zip_folder = Path.basename(zip_path, ".zip")
 
     # Extract the timestamp from the zip folder name (e.g. 20232310).
     @zip_folder_prefix <> ts = zip_folder
 
-    file_list
-    |> Enum.map(fn file_name -> Path.basename(file_name) end)
-    |> Enum.map(fn file_name ->
-      import_csv_file!(tmp_dir, zip_folder, file_name,
-        sha: import_sha256,
-        ts: ts
-      )
+    # Extract only required files from the zip file.
+    file_list =
+      case :zip.unzip(to_charlist(zip_path),
+             file_list: unzip_file_list(zip_folder),
+             cwd: to_charlist(tmp_dir)
+           ) do
+        {:ok, file_list} -> file_list
+        {:error, reason} -> raise "failed to unzip #{zip_path}: #{inspect(reason)}"
+      end
+
+    Enum.map(file_list, fn file ->
+      import_csv_file!(tmp_dir, zip_folder, Path.basename(file), sha: import_sha256, ts: ts)
     end)
   end
 
   @doc """
-    Imports the provided CSV file into the database. The CSV file is expected
-    to be in the temporary directory. The CSV file is imported in batches of
-    @csv_batch_size rows. Each batch is imported in a transaction.
-    Returns a Geolite2Import struct.
+  Imports the provided CSV file, extracted to `temp_dir/zip_folder`, into the
+  database. See `import_from_stream/3` for the options and return value.
 
-    ## Examples
+  ## Examples
 
-        iex> import_csv_file!(temp_dir, zip_folder, csv)
-        %Geolite2Import{
-          import_file: "GeoLite2-City-Locations-en.csv",
-          import_file_sha256: "abcd1234",
-          success_count: 10,
-          error_count: 0,
-          running_time: 12
-        }
+      iex> import_csv_file!(temp_dir, zip_folder, csv, sha: "abcd1234", ts: "20231024")
+      %Geolite2Import{
+        import_file: "GeoLite2-City-Locations-en.csv",
+        import_sha256: "abcd1234",
+        success_count: 10,
+        error_count: 0,
+        running_time: 12
+      }
   """
-  def import_csv_file!(temp_dir, zip_folder, csv, sha: import_sha256, ts: ts) do
+  @spec import_csv_file!(Path.t(), String.t(), String.t(), keyword()) :: Geolite2Import.t()
+  def import_csv_file!(temp_dir, zip_folder, csv, opts) do
     Path.join([temp_dir, zip_folder, csv])
     |> File.stream!()
-    |> import_from_stream(csv, sha: import_sha256, ts: ts)
+    |> import_from_stream(csv, opts)
   end
 
-  def import_from_stream(file_stream, csv, sha: import_sha256, ts: ts) do
-    stats_table = :ets.new(:csv_import_stats, [:set, :private])
+  @doc """
+  Imports CSV rows from `file_stream` into the table matching the `csv` file
+  name. Rows are inserted in batches of #{@csv_batch_size}, all within a single
+  transaction; invalid rows are logged and counted. Returns the
+  `Geolite2Import` struct recording the import.
 
-    try do
-      :ets.insert(stats_table, {:success_count, 0})
-      :ets.insert(stats_table, {:error_count, 0})
+  ## Options
 
-      import_with_tx(file_stream, stats_table, csv, sha: import_sha256, ts: ts)
-    after
-      :ets.delete(stats_table)
-    end
-  end
-
-  defp import_with_tx(file_stream, stats_table, csv, sha: import_sha256, ts: ts) do
+    * `:sha` - sha256 of the imported zip file (required)
+    * `:ts` - timestamp of the GeoLite2 release (required)
+  """
+  @spec import_from_stream(Enumerable.t(), String.t(), keyword()) :: Geolite2Import.t()
+  def import_from_stream(file_stream, csv, opts) do
+    import_sha256 = Keyword.fetch!(opts, :sha)
+    ts = Keyword.fetch!(opts, :ts)
+    schema = schema_for(csv)
     t0 = System.monotonic_time(:millisecond)
 
-    res =
+    {:ok, geolite2_import} =
       Repo.transaction(
         fn ->
           now = DateTime.utc_now()
 
-          file_stream
-          |> CSV.parse_stream(skip_headers: true)
-          |> Stream.chunk_every(@csv_batch_size)
-          |> Stream.each(fn chunk ->
-            chunk
-            |> Enum.map(&convert_row_to_changeset(&1, now, csv))
-            |> write_changesets_to_db(csv)
-            |> update_stats(stats_table)
-          end)
-          |> Stream.run()
+          {success_count, error_count} =
+            file_stream
+            |> CSV.parse_stream(skip_headers: true)
+            |> Stream.chunk_every(@csv_batch_size)
+            |> Enum.reduce({0, 0}, fn rows, {success_count, error_count} ->
+              {valid, invalid} =
+                rows
+                |> Enum.map(&schema.convert_row_to_changeset(&1, now))
+                |> Enum.split_with(& &1.valid?)
 
-          t1 = System.monotonic_time(:millisecond)
+              Enum.each(invalid, &log_invalid_changeset/1)
+              insert_all(schema, Enum.map(valid, & &1.changes))
 
-          success_count = elem(hd(:ets.lookup(stats_table, :success_count)), 1)
-          error_count = elem(hd(:ets.lookup(stats_table, :error_count)), 1)
+              {success_count + length(valid), error_count + length(invalid)}
+            end)
+
+          running_time = System.monotonic_time(:millisecond) - t0
 
           :telemetry.execute(
             [:geo_ip_server, :csv_import, :duration],
-            %{took: t1 - t0},
-            %{
-              csv: csv
-            }
+            %{took: running_time},
+            %{csv: csv}
           )
 
           DataImport.create_geolite2_import!(%{
@@ -333,7 +331,7 @@ defmodule GeoIpServer.Geolite2City do
             import_sha256: import_sha256,
             success_count: success_count,
             error_count: error_count,
-            running_time: t1 - t0,
+            running_time: running_time,
             created_at: now,
             timestamp: ts
           })
@@ -341,40 +339,7 @@ defmodule GeoIpServer.Geolite2City do
         timeout: :infinity
       )
 
-    case res do
-      {:ok, val} -> val
-      {:error, reason} -> raise "error importing CSV: #{inspect(reason)}"
-    end
-  end
-
-  defp write_changesets_to_db(changesets, csv) do
-    {ok_changesets, changesets} =
-      Enum.reduce(changesets, {[], []}, fn cs, {oks, all} ->
-        if cs.valid? do
-          {[cs.changes | oks], [cs | all]}
-        else
-          log_invalid_changeset(cs, csv)
-          {oks, [cs | all]}
-        end
-      end)
-
-    insert_to_db(ok_changesets, csv)
-
-    changesets
-  end
-
-  defp update_stats(changesets, stats_table) do
-    {success_count, error_count} =
-      Enum.reduce(changesets, {0, 0}, fn cs, {s, e} ->
-        if cs.valid? do
-          {s + 1, e}
-        else
-          {s, e + 1}
-        end
-      end)
-
-    :ets.update_counter(stats_table, :success_count, success_count)
-    :ets.update_counter(stats_table, :error_count, error_count)
+    geolite2_import
   end
 
   defp validate_sha256!(geolite_sha256_path, geolite_zip_path) do
@@ -392,126 +357,52 @@ defmodule GeoIpServer.Geolite2City do
   end
 
   defp unzip_file_list(folder_prefix) do
-    @unzip_file_list
-    |> Enum.map(fn file_name -> String.to_charlist(Path.join([folder_prefix, file_name])) end)
+    Enum.map(@unzip_file_list, &to_charlist(Path.join(folder_prefix, &1)))
   end
 
-  defp log_invalid_changeset(changeset, csv) do
-    changes =
-      GeoIpServer.Utils.struct_from_map(
-        changeset.changes,
-        to: file_name_to_struct(csv)
-      )
-
+  defp log_invalid_changeset(changeset) do
     errors =
-      Enum.map_join(
-        changeset.errors,
-        ", ",
-        fn {key, value} -> "#{key} #{elem(value, 0)}" end
-      )
+      Enum.map_join(changeset.errors, ", ", fn {key, {message, _opts}} -> "#{key} #{message}" end)
 
-    Logger.info("failed row validations, changes: [#{changes}], errors: [#{errors}]")
+    Logger.info(
+      "failed row validations, changes: #{inspect(changeset.changes)}, errors: [#{errors}]"
+    )
   end
 
-  defp convert_row_to_changeset(row, now, csv) when csv == @locations,
-    do: Location.convert_row_to_changeset(row, now)
+  defp schema_for(@locations), do: Location
+  defp schema_for(@blocks_ipv4), do: BlockIpv4
+  defp schema_for(@blocks_ipv6), do: BlockIpv6
 
-  defp convert_row_to_changeset(row, now, csv) when csv == @blocks_ipv4,
-    do: BlockIpv4.convert_row_to_changeset(row, now)
-
-  defp convert_row_to_changeset(row, now, csv) when csv == @blocks_ipv6,
-    do: BlockIpv6.convert_row_to_changeset(row, now)
-
-  defp insert_to_db(changesets, csv) when csv == @locations,
-    do:
-      Repo.insert_all({"geolite2_city_locations", Location}, changesets,
-        on_conflict: :replace_all,
-        conflict_target: [:geoname_id]
-      )
-
-  defp insert_to_db(changesets, csv) when csv == @blocks_ipv4,
-    do:
-      Repo.insert_all({"geolite2_city_blocks_ipv4", BlockIpv4}, changesets,
-        on_conflict: :replace_all,
-        conflict_target: [:network]
-      )
-
-  defp insert_to_db(changesets, csv) when csv == @blocks_ipv6,
-    do:
-      Repo.insert_all({"geolite2_city_blocks_ipv6", BlockIpv6}, changesets,
-        on_conflict: :replace_all,
-        conflict_target: [:network]
-      )
-
-  defp get_locations_for_ip(ip_address, type: type) do
-    case parse_ip_address(ip_address, type: type) do
-      {:ok, _} ->
-        {_, val} =
-          Cache.fetch(ip_address, fn ipadr -> run_locations_query(ipadr, type: type) end)
-
-        {:ok, val}
-
-      {:error, :einval} ->
-        {:error, :invalid_ip}
-    end
+  defp insert_all(schema, entries) do
+    Repo.insert_all(schema, entries,
+      on_conflict: :replace_all,
+      conflict_target: schema.__schema__(:primary_key)
+    )
   end
 
-  defp run_locations_query(ip_address, type: type) do
-    query =
-      Repo.query("""
-      SELECT l.*
-      FROM geolite2_city_blocks_#{table_suffix(type)} AS r
-      JOIN geolite2_city_locations AS l
-      ON l.geoname_id = r.geoname_id
-      WHERE r.network >>= '#{ip_address}'
-      """)
+  defp locations_query(address) do
+    block_schema = if tuple_size(address) == 4, do: BlockIpv4, else: BlockIpv6
 
-    ret =
-      case query do
-        {:ok, res} ->
-          map_from_sql_query_result(res)
-
-        {:error, msg} ->
-          Logger.error("SQL query failed: #{msg}")
-          []
-      end
-
-    {:commit, ret}
+    Repo.all(
+      from l in Location,
+        join: b in ^block_schema,
+        on: b.geoname_id == l.geoname_id,
+        where: fragment("? >>= ?", b.network, ^%Postgrex.INET{address: address})
+    )
   end
 
-  defp get_block_ip(cidr, type: type) do
-    with {:ok, _} <- EctoNetwork.CIDR.cast(cidr),
-         {:ok, res} <-
-           Repo.query(
-             "SELECT r.* " <>
-               "FROM geolite2_city_blocks_#{table_suffix(type)} AS r " <>
-               "WHERE r.network >>= '#{cidr}'" <>
-               "LIMIT 1"
+  defp get_block(schema, cidr) do
+    with {:ok, network} <- EctoNetwork.CIDR.cast(cidr),
+         %{} = block <-
+           Repo.one(
+             from b in schema,
+               where: fragment("? >>= ?", b.network, ^network),
+               limit: 1
            ) do
-      case struct_from_sql_query_result(res, to: get_module(type)) do
-        [] -> {:error, :not_found}
-        rec -> {:ok, hd(rec)}
-      end
+      {:ok, block}
     else
       :error -> {:error, :invalid_ip}
-      {:error, err} -> {:error, "SQL query failed: #{err}"}
+      nil -> {:error, :not_found}
     end
   end
-
-  defp parse_ip_address(addr, type: type) when type == :ip4 do
-    :inet.parse_ipv4strict_address(to_charlist(addr))
-  end
-
-  defp parse_ip_address(addr, type: type) when type == :ip6,
-    do: :inet.parse_ipv6strict_address(to_charlist(addr))
-
-  defp file_name_to_struct(csv) when csv == @locations, do: %Location{}
-  defp file_name_to_struct(csv) when csv == @blocks_ipv4, do: %BlockIpv4{}
-  defp file_name_to_struct(csv) when csv == @blocks_ipv6, do: %BlockIpv6{}
-
-  defp table_suffix(type) when type == :ip4, do: "ipv4"
-  defp table_suffix(type) when type == :ip6, do: "ipv6"
-
-  defp get_module(type) when type == :ip4, do: BlockIpv4
-  defp get_module(type) when type == :ip6, do: BlockIpv6
 end

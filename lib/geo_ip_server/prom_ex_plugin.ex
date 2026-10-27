@@ -20,7 +20,7 @@ defmodule GeoIpServer.PromExPlugin do
             event_name: @csv_import_duration_event,
             description: "The duration in milliseconds of CSV import.",
             measurement: :took,
-            unit: {:native, :nanosecond},
+            unit: :millisecond,
             tags: [:csv],
             tag_values: &get_csv_file_name/1,
             reporter_options: [buckets: @csv_import_duration_event_buckets]

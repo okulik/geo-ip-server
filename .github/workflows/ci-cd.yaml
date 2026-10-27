@@ -29,20 +29,17 @@ jobs:
           --health-retries 5
     runs-on: ubuntu-latest
     name: Run Tests
-    strategy:
-      matrix:
-        otp: ["26.1.1"] # Define the OTP version [required]
-        elixir: ["1.15.6-otp-26"] # Define the elixir version [required]
     steps:
       -
         name: Checkout code
         uses: actions/checkout@v7
       -
         name: Set up Elixir
+        id: beam
         uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
+          version-file: .tool-versions
+          version-type: strict
       -
         name: Cache deps
         id: cache-deps
@@ -51,9 +48,9 @@ jobs:
           cache-name: cache-elixir-deps
         with:
           path: deps
-          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-${{ env.cache-name }}-
+            ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-
       -
         name: Cache compiled build
         id: cache-build
@@ -62,10 +59,9 @@ jobs:
           cache-name: cache-compiled-build
         with:
           path: _build
-          key: ${{ runner.os }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
-            ${{ runner.os }}-mix-${{ env.cache-name }}-
-            ${{ runner.os }}-mix-
+            ${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-mix-${{ env.cache-name }}-
       -
         name: Install dependencies
         run: mix deps.get
@@ -84,7 +80,7 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           key: |
-            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'mix.lock') }}
           restore-keys: |
             plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
           path: |
@@ -100,7 +96,7 @@ jobs:
         if: steps.plt_cache.outputs.cache-hit != 'true'
         with:
           key: |
-            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('**/mix.lock') }}
+            plt-${{ runner.os }}-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.exs', 'mix.lock') }}
           path: |
             priv/plts
       -
@@ -111,12 +107,14 @@ jobs:
         run: mix ecto.setup
       -
         name: Run tests
-        run: mix test.ci
+        run: mix test
 
   deploy:
     name: Deploy app
     runs-on: ubuntu-latest
     needs: [test]
+    # Deploy only pushes to main, and only while the FLY_DEPLOY_ENABLED repository variable is "true".
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.FLY_DEPLOY_ENABLED == 'true'
     steps:
       - name: Checks out the code
         uses: actions/checkout@v7
