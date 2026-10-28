@@ -16,4 +16,22 @@ defmodule GeoIpServer.PromEx do
       GeoIpServer.PromExPlugin
     ]
   end
+
+  @impl true
+  def dashboard_assigns do
+    [
+      # Matches the uid of the Grafana data source in monitoring/grafana/provisioning.
+      datasource_id: "victoriametrics",
+      default_selected_interval: "30s"
+    ]
+  end
+
+  @impl true
+  def dashboards do
+    [
+      {:prom_ex, "beam.json"},
+      {:prom_ex, "ecto.json"},
+      {:prom_ex, "phoenix.json"}
+    ]
+  end
 end

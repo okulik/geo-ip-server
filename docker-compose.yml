@@ -24,6 +24,38 @@ services:
       restart: always
       volumes:
          - pgdata:/var/lib/postgresql/data
+   victoriametrics:
+      image: victoriametrics/victoria-metrics:v1.154.1
+      command:
+         - '--promscrape.config=/etc/victoriametrics/scrape.yml'
+         - '--storageDataPath=/storage'
+      environment:
+         # Scrapes the api service by default. Use host.docker.internal:4000 for an app started with `mix phx.server`.
+         METRICS_TARGET: ${METRICS_TARGET:-api:4000}
+      ports:
+         - '8428:8428'
+      extra_hosts:
+         - 'host.docker.internal:host-gateway'
+      volumes:
+         - ./monitoring/victoriametrics/scrape.yml:/etc/victoriametrics/scrape.yml:ro
+         - vmdata:/storage
+   grafana:
+      image: grafana/grafana:13.2.5
+      environment:
+         GF_SECURITY_ADMIN_USER: admin
+         GF_SECURITY_ADMIN_PASSWORD: admin
+         GF_AUTH_ANONYMOUS_ENABLED: 'true'
+         GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      ports:
+         - '3000:3000'
+      depends_on:
+         - victoriametrics
+      volumes:
+         - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+         - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+         - grafanadata:/var/lib/grafana
 
 volumes:
    pgdata:
+   vmdata:
+   grafanadata:

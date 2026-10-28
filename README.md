@@ -53,6 +53,23 @@ HTTP/1.1 200 OK
 {"records":[{"city_name":"Kumari","continent_code":"AS","continent_name":"Asia","country_iso_code":"JP"}]}
 ```
 
+### Monitoring with VictoriaMetrics and Grafana
+
+Docker Compose also starts [VictoriaMetrics](https://victoriametrics.com), which scrapes the service's `/metrics` endpoint every 10 seconds, and [Grafana](https://grafana.com) with the [PromEx](https://github.com/akoutmos/prom_ex) BEAM, Ecto and Phoenix dashboards already provisioned:
+
+- Grafana: http://localhost:3000 (dashboards are in the `Geo IP Server` folder; sign in with `admin`/`admin` to edit them)
+- VictoriaMetrics: http://localhost:8428/vmui (query UI) and http://localhost:8428/targets (scrape status)
+
+To monitor the service started on the host with `mix phx.server` instead, start only the monitoring services and point the scraper at the host:
+```bash
+$ METRICS_TARGET=host.docker.internal:4000 docker compose up victoriametrics grafana
+```
+
+The dashboards in `monitoring/grafana/dashboards` are rendered from PromEx templates. After upgrading PromEx, re-export them with:
+```bash
+$ for d in beam ecto phoenix; do mix prom_ex.dashboard.export -d $d.json -m GeoIpServer.PromEx -s > monitoring/grafana/dashboards/$d.json; done
+```
+
 ## Importing from CSV
 
 To populate the database with geoip data, the service can import the IP address data from MaxMind's Geolite2 City database in CSV format. To run the import manually, use the following command:

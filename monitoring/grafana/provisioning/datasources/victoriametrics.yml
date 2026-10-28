@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: VictoriaMetrics
+    # Referenced by the PromEx dashboards, see GeoIpServer.PromEx.dashboard_assigns/0.
+    uid: victoriametrics
+    # VictoriaMetrics implements the Prometheus query API.
+    type: prometheus
+    access: proxy
+    url: http://victoriametrics:8428
+    isDefault: true
