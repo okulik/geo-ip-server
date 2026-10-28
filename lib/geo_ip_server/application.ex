@@ -8,14 +8,14 @@ defmodule GeoIpServer.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      # Start the PromEx metrics exporter first so it captures the Repo and Endpoint init events
+      GeoIpServer.PromEx,
       # Starts the Nebulex based cache
       GeoIpServer.Cache,
       # Start the Ecto repository
       GeoIpServer.Repo,
       # Start the Endpoint (http/https)
-      GeoIpServerWeb.Endpoint,
-      # Start the PromEx metrics exporter
-      GeoIpServer.PromEx
+      GeoIpServerWeb.Endpoint
     ]
 
     opts = [strategy: :one_for_one, name: GeoIpServer.Supervisor]
