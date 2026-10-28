@@ -11,6 +11,7 @@ defmodule GeoIpServer.MixProject do
       aliases: aliases(),
       deps: deps(),
       consolidated_protocols: Mix.env() != :test,
+      listeners: [Phoenix.CodeReloader],
       dialyzer: [
         plt_add_apps: [:mix, :ex_unit],
         plt_file: {:no_warn, "priv/plts/project.plt"}
