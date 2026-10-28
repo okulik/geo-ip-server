@@ -4,8 +4,6 @@ defmodule GeoIpServer.Release do
   installed.
   """
 
-  require Logger
-
   @app :geo_ip_server
 
   @doc """

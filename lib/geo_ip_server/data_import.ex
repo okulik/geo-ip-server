@@ -6,8 +6,6 @@ defmodule GeoIpServer.DataImport do
   alias GeoIpServer.DataImport.Geolite2Import
   alias GeoIpServer.Repo
 
-  require Logger
-
   @doc """
   Returns a single import.
 
